@@ -689,6 +689,19 @@ function crossAll() {
   return proof(F, [g], [0, 1, 2, 3].filter(i => i !== g), ['ne', 'sc'], 'Bestimme alle Winkel mit ?.', `${a},${g}`);
 }
 
+// Zwei Winkel an einem Punkt. Ergeben sie 180°, ist die Linie von A nach B gerade. Die erste Aufgabe hat 178°.
+let knFirst = true;
+function knQ() {
+  let u; do u = rnd(50, 130); while (u === 90);
+  const k = knFirst ? -2 : pick([-2, 0, 2]); knFirst = false;
+  const M0 = P(200, 190), A0 = polar(M0, 170, 180), B0 = polar(M0, 170, -k), C0 = polar(M0, 140, u), l = 180 - u, r = u + k;
+  return {
+    sig: `${u},${k}`, type: 'choice', text: 'Ist die Linie von A nach B gerade?', opts: ['Ja, gerade', 'Nein, mit Knick'], right: k ? 1 : 0, off: [],
+    explain: k ? `${l}° + ${r}° = ${l + r}°. Nicht 180°, also hat die Linie einen Knick.` : `${l}° + ${r}° = 180°. Also ist die Linie gerade.`,
+    draw() { return wedge(M0, u, 180, 40, 'c2', l + '°') + wedge(M0, -k, u, 40, 'c1', r + '°') + line(M0, A0) + line(M0, B0) + line(M0, C0) + dot(M0) + dot(A0) + dot(B0) + txt(P(A0.x, A0.y + 16), 'A') + txt(P(B0.x, B0.y + 16), 'B'); }
+  };
+}
+
 // ---------- 2 Stufenwinkel und Wechselwinkel ----------
 function parFigure(a, tl = 0) {
   const F0 = P(200, 152), onF = y => P(F0.x + (F0.y - y) / Math.tan(rad(a)), y), G0 = onF(92), H0 = onF(212);
@@ -746,7 +759,8 @@ function triTwo() {
 const TOPICS = [
   { name: 'Winkel an Kreuzungen', levels: [
     { name: 'Ein Winkel', need: 5, gen: crossOne },
-    { name: 'Alle vier Winkel', need: 3, gen: crossAll }] },
+    { name: 'Alle vier Winkel', need: 3, gen: crossAll },
+    { name: 'Gerade oder Knick?', need: 5, gen: knQ }] },
   { name: 'Stufenwinkel und Wechselwinkel', levels: [
     { name: 'Ein Schritt', need: 5, gen: parOne },
     { name: 'Zwei Schritte', need: 4, gen: parTwo },
