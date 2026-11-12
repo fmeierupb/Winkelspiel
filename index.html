@@ -3,7 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'">
+<meta name="color-scheme" content="light dark">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Winkel">
+<meta name="theme-color" content="#3b82f6">
 <title>Winkel und Dreiecke</title>
 <style>
 :root{--bg:#f4f3ee;--card:#fff;--fg:#1d2330;--mut:#8a90a0;--line:#dcdbd4;--c1:#3b82f6;--c2:#f59e0b;--c3:#10b981;--c4:#ec4899;--ok:#16a34a;--bad:#dc2626;--star:#f5b301}
@@ -65,6 +72,14 @@ svg .hd{fill:var(--c1);opacity:.25}svg .hd2{fill:var(--c1)}
 svg .ip{fill:var(--c4)}
 svg .tx{fill:var(--fg);font:600 14px system-ui,sans-serif}
 svg .ts{fill:var(--mut);font:500 13px system-ui,sans-serif}
+svg .tg{fill:var(--c4)}
+svg .gw{fill:var(--bad);fill-opacity:.16;stroke:var(--bad);stroke-width:2;stroke-dasharray:5 4}
+svg .sel{fill:none;stroke:var(--c1);stroke-width:3}
+.pr{margin:0 0 8px;color:var(--mut)}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.cards button{font-size:17px;padding:12px 8px}
+.hl{display:flex;justify-content:space-between;gap:10px;font-weight:600;font-size:17px;padding:2px 0}
+.hl small{color:var(--mut);font-weight:500;font-size:14px;text-align:right}
 </style>
 </head>
 <body>
@@ -172,56 +187,8 @@ const acute = () => { let al, be; do { al = rnd(50, 75); be = rnd(50, 75); } whi
 
 // ---------- 1 Winkel an Kreuzungen ----------
 const GR = { al: 'α', be: 'β', ga: 'γ', de: 'δ' }, KEYS = ['al', 'be', 'ga', 'de'];
-function crossFig(a, L) {
-  const m = P(200, 150), R = 175, r = 34;
-  let s = '';
-  [['al', 0, a, 'c1'], ['be', a, 180, 'c2'], ['ga', 180, 180 + a, 'c1'], ['de', 180 + a, 360, 'c2']]
-    .forEach(([k, x, y, c]) => { s += wedge(m, x, y, r, L[k] !== undefined ? c : 'c0', L[k]); });
-  return s + line(polar(m, R, 0), polar(m, R, 180)) + line(polar(m, R, a), polar(m, R, a + 180));
-}
-function crossDrag() {
-  let target; do target = rnd(6, 30) * 5; while (target === 90);
-  const m = P(200, 150);
-  return {
-    sig: target, type: 'drag', a: target > 90 ? 60 : 120, pts: { H: polar(m, 140, target > 90 ? 60 : 120) },
-    text: `Dreh die Gerade, bis α = ${target}° groß ist.`,
-    explain: 'Gegenüber liegt immer der gleiche Winkel. Zwei Winkel nebeneinander ergeben zusammen 180°.',
-    move(T, n, p) { let a = Math.round(dir(m, p)); if (a > 180) a -= 180; a = Math.max(25, Math.min(155, a)); T.a = a; T.pts.H = polar(m, 140, a); },
-    check(T) { return T.a === target ? { ok: true } : { msg: `α ist gerade ${T.a}° groß.` }; },
-    draw(T) { const a = T.a; return crossFig(a, { al: `α=${a}°`, be: `β=${180 - a}°`, ga: `γ=${a}°`, de: `δ=${180 - a}°` }) + (T.ok ? '' : handle(T.pts.H)); }
-  };
-}
-function crossNum(all) {
-  let a; do a = all ? rnd(25, 155) : rnd(5, 31) * 5; while (a === 90);
-  const val = { al: a, be: 180 - a, ga: a, de: 180 - a };
-  const gi = rnd(0, 3), g = KEYS[gi], off = pick([1, 2, 3]);
-  const ask = all ? KEYS.filter(k => k !== g) : [KEYS[(gi + off) % 4]];
-  const fields = ask.map(k => ({ k, name: GR[k], ans: val[k], unit: '°', val: '' }));
-  return {
-    sig: Math.min(a, 180 - a), type: 'num', fields,
-    text: `${GR[g]} = ${val[g]}°. ` + (all ? 'Bestimme die anderen drei Winkel.' : `Wie groß ist ${fields[0].name}?`),
-    tip: 'Gegenüber liegt der gleiche Winkel. Nebeneinander sind es zusammen 180°.',
-    explain: all ? 'Scheitelwinkel sind gleich groß. Nebenwinkel ergeben zusammen 180°.' : off === 2 ? 'Scheitelwinkel sind gleich groß.' : 'Nebenwinkel ergeben zusammen 180°.',
-    draw(T) { const L = {}; L[g] = `${GR[g]}=${val[g]}°`; T.fields.forEach(x => { L[x.k] = `${x.name}=${x.val ? x.val + '°' : '?'}`; }); return crossFig(a, L); }
-  };
-}
-
 // ---------- 2 Innenwinkelsumme ----------
 function triAngles() { let al, be, ga; do { al = rnd(6, 16) * 5; be = rnd(6, 16) * 5; ga = 180 - al - be; } while (ga < 30); return [al, be, ga]; }
-function triNum() {
-  const ang = triAngles(), ps = tri(ang[0], ang[1], [70, 30, 330, 185]), nm = ['α', 'β', 'γ'], i = rnd(0, 2);
-  return {
-    sig: ang.slice().sort().join(), type: 'num', fields: [{ name: nm[i], ans: ang[i], unit: '°', val: '' }],
-    text: `Wie groß ist ${nm[i]}?`, tip: 'Im Dreieck sind alle drei Winkel zusammen 180°.',
-    explain: 'Die drei Winkel passen zusammen genau an eine gerade Linie. Das sind 180°.',
-    draw(T) {
-      const c = cen(ps); let s = '';
-      ps.forEach((p, j) => { s += inner(p, ps[(j + 1) % 3], ps[(j + 2) % 3], 26, 'c' + (j + 1)); });
-      s += poly(ps); ps.forEach((p, j) => { s += olab(p, c, lab(T, nm[j], ang[j])); });
-      return s + line(P(130, 282), P(270, 282), 'fa') + strip(P(200, 282), ang, ['c1', 'c2', 'c3'], 46);
-    }
-  };
-}
 function quadGen() {
   for (let i = 0; i < 300; i++) {
     const al = rnd(12, 24) * 5, be = rnd(12, 24) * 5, ga = rnd(12, 24) * 5, de = 360 - al - be - ga;
@@ -234,36 +201,6 @@ function quadGen() {
   }
   return { ang: [90, 90, 90, 90], pts: [P(0, 0), P(1.4, 0), P(1.4, -1), P(0, -1)] };
 }
-function quadNum() {
-  const q = quadGen(), ang = q.ang, ps = fit(q.pts, 80, 30, 320, 168), nm = ['α', 'β', 'γ', 'δ'], i = rnd(0, 3);
-  return {
-    sig: ang.slice().sort().join(), type: 'num', fields: [{ name: nm[i], ans: ang[i], unit: '°', val: '' }],
-    text: `Wie groß ist ${nm[i]}?`, tip: 'Im Viereck sind alle vier Winkel zusammen 360°.',
-    explain: 'Ein Viereck besteht aus zwei Dreiecken. Deshalb sind es zusammen 2 · 180° = 360°.',
-    draw(T) {
-      const c = cen(ps); let s = line(ps[0], ps[2], 'da');
-      ps.forEach((p, j) => { s += inner(p, ps[(j + 1) % 4], ps[(j + 3) % 4], 24, 'c' + (j + 1)); });
-      s += poly(ps); ps.forEach((p, j) => { s += olab(p, c, lab(T, nm[j], ang[j])); });
-      return s + strip(P(200, 250), ang, ['c1', 'c2', 'c3', 'c4'], 40);
-    }
-  };
-}
-function triExt() {
-  const [al, be, ga] = triAngles(), ps = tri(al, be, [60, 40, 300, 235]), ex = 180 - be;
-  return {
-    sig: [al, be, ga].sort().join(), type: 'num', fields: [{ name: 'β', ans: be, unit: '°', val: '' }, { name: 'γ', ans: ga, unit: '°', val: '' }],
-    text: 'Bestimme β und γ.', tip: 'β und der Winkel daneben ergeben zusammen 180°. Danach fehlt im Dreieck nur noch γ.',
-    explain: 'Erst der Nebenwinkel, dann die Winkelsumme im Dreieck.',
-    draw(T) {
-      const c = cen(ps), [A, B, C] = ps;
-      let s = wedge(B, 0, ex, 26, 'c4', ex + '°');
-      s += inner(A, B, C, 26, 'c1') + inner(B, A, C, 26, 'c2') + inner(C, A, B, 26, 'c3');
-      s += poly(ps) + line(B, P(B.x + 80, B.y));
-      return s + olab(A, c, `α=${al}°`) + txt(P(B.x, B.y + 18), lab(T, 'β', be)) + olab(C, c, lab(T, 'γ', ga));
-    }
-  };
-}
-
 // ---------- 3 Mittelsenkrechte und Winkelhalbierende ----------
 function msDrag() {
   const th = rnd(-25, 25), h = rnd(60, 90), M = P(200, 165), A = polar(M, h, 180 + th), B = polar(M, h, th);
@@ -604,16 +541,235 @@ function triCon(kind) {
   });
 }
 
+// ---------- Begründen: Winkel aus Beziehungen ----------
+// Eine Figur hat Ecken mit Strahlen. Ein Winkel liegt an einer Ecke, gegen den Uhrzeigersinn von Strahl a1 bis a2.
+// Ein Schritt: gesuchten Winkel antippen, Begriffskarte wählen, bekannten Winkel antippen, Größe eintragen.
+const CARDS = { ne: 'Nebenwinkel', sc: 'Scheitelwinkel', st: 'Stufenwinkel', we: 'Wechselwinkel', su: 'Winkelsumme' };
+const nrm = a => ((a % 360) + 360) % 360;
+const same = (a, b) => { const d = Math.abs(nrm(a) - nrm(b)); return Math.min(d, 360 - d) < 0.6; };
+const ang = (v, a1, a2, name, val, o = {}) => Object.assign({ v, a1: nrm(a1), a2: nrm(a2), name, val, known: false, goal: false }, o);
+const onLine = (F, A, B) => { const d = dir(F.V[A.v], F.V[B.v]); return [A.a1, A.a2].some(x => same(x, d) || same(x + 180, d)); };
+// Welche Beziehungen bestehen wirklich zwischen Winkel s und Winkel t?
+function rels(F, s, t) {
+  const A = F.A[s], B = F.A[t], r = [];
+  if (A.v === B.v) {
+    if ((same(B.a1, A.a2) && same(B.a2, A.a1 + 180)) || (same(A.a1, B.a2) && same(A.a2, B.a1 + 180))) r.push('ne');
+    if (same(B.a1, A.a1 + 180) && same(B.a2, A.a2 + 180)) r.push('sc');
+  } else if (onLine(F, A, B)) {
+    if (same(B.a1, A.a1) && same(B.a2, A.a2)) r.push('st');
+    if (same(B.a1, A.a1 + 180) && same(B.a2, A.a2 + 180)) r.push('we');
+  }
+  return r;
+}
+const polyOf = (F, t) => F.polys.find(pl => pl.includes(t));
+// Prüft die Behauptung. Ist sie falsch, zeigt die Figur rot, wo der Winkel wirklich landet.
+function claim(T) {
+  const F = T.F, { t, c, s } = T.sel, B = F.A[t];
+  T.ghost = [];
+  if (c === 'su') {
+    const pl = polyOf(F, t);
+    if (!pl) return { msg: `${B.name} ist kein Innenwinkel eines Dreiecks oder Vierecks.` };
+    const mi = pl.filter(i => i !== t && !F.A[i].known);
+    if (mi.length) { T.ghost = mi.map(i => F.A[i]); return { msg: `Dafür musst du erst ${mi.map(i => F.A[i].name).join(' und ')} kennen.` }; }
+    return { ok: true };
+  }
+  const A = F.A[s];
+  if (rels(F, s, t).includes(c)) return { ok: true };
+  if (c === 'ne') {
+    const nb = F.A.map((x, i) => i).filter(i => i !== s && rels(F, s, i).includes('ne'));
+    T.ghost = nb.map(i => F.A[i]);
+    return { msg: nb.length ? `Die Nebenwinkel von ${A.name} sind rot markiert. Nebenwinkel liegen nebeneinander an einer Geraden.` : `${A.name} hat hier keinen Nebenwinkel.` };
+  }
+  if (c === 'sc') {
+    T.ghost = [{ v: A.v, a1: A.a1 + 180, a2: A.a2 + 180 }];
+    return { msg: A.v !== B.v ? `Scheitelwinkel liegen an derselben Kreuzung. Gegenüber von ${A.name} liegt der rote Winkel.` : `Gegenüber von ${A.name} liegt der rote Winkel, nicht ${B.name}.` };
+  }
+  if (A.v === B.v) return { msg: `${CARDS[c]} liegen an zwei verschiedenen Kreuzungen.` };
+  if (!onLine(F, A, B)) return { msg: `${A.name} und ${B.name} liegen nicht an derselben Geraden.` };
+  const k = c === 'we' ? 180 : 0, g = { v: B.v, a1: A.a1 + k, a2: A.a2 + k };
+  T.ghost = [g];
+  if (!F.rays[B.v].some(x => same(x, g.a1)) || !F.rays[B.v].some(x => same(x, g.a2)))
+    return { msg: `Verschoben passt ${A.name} nicht in die andere Kreuzung. Die Geraden sind nicht parallel.` };
+  return { msg: c === 'st' ? `Verschoben landet ${A.name} auf dem roten Winkel, nicht auf ${B.name}.` : `Verschoben und gedreht landet ${A.name} auf dem roten Winkel, nicht auf ${B.name}.` };
+}
+function expect(T) {
+  const F = T.F, { t, c, s } = T.sel;
+  if (c === 'su') { const pl = polyOf(F, t), o = pl.filter(i => i !== t), tot = (pl.length - 2) * 180; return { v: tot - o.reduce((n, i) => n + F.A[i].val, 0), o, tot }; }
+  const sv = F.A[s].val; return { v: c === 'ne' ? 180 - sv : sv, sv };
+}
+// Die Zeile, die so auch ins Heft gehört.
+function heft(T, e) {
+  const F = T.F, { t, c, s } = T.sel, tn = F.A[t].name;
+  if (c === 'su') return [`${tn} = ${e.tot}° ${e.o.map(i => '− ' + F.A[i].val + '°').join(' ')} = ${e.v}°`, e.tot === 180 ? 'Winkelsumme im Dreieck' : 'Winkelsumme im Viereck'];
+  const sn = F.A[s].name;
+  return c === 'ne' ? [`${tn} = 180° − ${e.sv}° = ${e.v}°`, `Nebenwinkel zu ${sn}`] : [`${tn} = ${sn} = ${e.v}°`, `${CARDS[c]} zu ${sn}`];
+}
+function diagnose(T, val, e) {
+  const c = T.sel.c;
+  if (c === 'ne' && val === e.sv) return 'Nebenwinkel sind nicht gleich groß. Zusammen sind sie 180°.';
+  if (c !== 'ne' && c !== 'su' && val === 180 - e.sv) return `${CARDS[c]} sind gleich groß. Du hast den Nebenwinkel ausgerechnet.`;
+  if (c === 'su') {
+    const rest = e.tot - e.v;
+    if (e.tot === 180 && val === 360 - rest) return 'Im Dreieck sind alle Winkel zusammen 180°, nicht 360°.';
+    if (e.tot === 360 && val === 180 - rest) return 'Im Viereck sind alle Winkel zusammen 360°, nicht 180°.';
+    if (e.o.some(i => val === e.tot - T.F.A[i].val)) return 'Zieh alle anderen Winkel ab, nicht nur einen.';
+  }
+  return 'Rechne noch einmal nach.';
+}
+function proofTip(T) {
+  const F = T.F, ts = T.sel ? [T.sel.t] : F.A.map((x, i) => i).filter(i => !F.A[i].known);
+  for (const t of ts) {
+    if (T.cards.includes('su')) { const pl = polyOf(F, t); if (pl && pl.every(i => i === t || F.A[i].known)) return `Bei ${F.A[t].name} hilft die Winkelsumme.`; }
+    for (let s = 0; s < F.A.length; s++) if (F.A[s].known && rels(F, s, t).some(c => T.cards.includes(c)))
+      return `Nimm ${F.A[s].name} und ${F.A[t].name}. Liegen sie nebeneinander, gegenüber oder an der anderen Kreuzung?`;
+  }
+  return 'Fang mit einem Winkel an, der direkt an einem bekannten Winkel liegt.';
+}
+// Beschriftung: im Winkel, bei Innenwinkeln von Vielecken außen an der Ecke.
+function angPos(F, A) {
+  const d = nrm(A.a2 - A.a1), mid = A.a1 + d / 2, V = F.V[A.v];
+  if (A.out) {
+    const w = mid + 180, ux = Math.cos(rad(w)), uy = Math.sin(rad(w)), hw = 4.2 * A.lab.length, q = polar(V, 14 + hw * Math.abs(ux) + 9 * Math.abs(uy), w);
+    return P(Math.max(hw + 3, Math.min(397 - hw, q.x)), Math.max(9, Math.min(291, q.y)));
+  }
+  const half = A.lab.length * 4 + 4, lr = Math.min(F.cap, Math.max(F.r + 16, half / Math.tan(rad(Math.min(d, 178) / 2))));
+  return polar(V, lr, mid);
+}
+const sector = (v, a1, a2, r, c) => { const d = nrm(a2 - a1), p1 = polar(v, r, a1), p2 = polar(v, r, a1 + d); return `<path class="${c}" d="M${f(v.x)} ${f(v.y)}L${f(p1.x)} ${f(p1.y)}A${r} ${r} 0 ${d > 180 ? 1 : 0} 0 ${f(p2.x)} ${f(p2.y)}Z"/>`; };
+function proofDraw(T) {
+  const F = T.F, sel = T.sel || {}; let s = '';
+  F.A.forEach((A, i) => {
+    A.lab = A.known ? `${A.name} = ${A.val}°` : A.goal ? `${A.name} = ?` : A.name;
+    s += sector(F.V[A.v], A.a1, A.a2, F.r, 'wd ' + (sel.s === i ? 'c2' : A.known ? 'c1' : A.goal ? 'c4' : 'c0'));
+    if (sel.t === i) s += sector(F.V[A.v], A.a1, A.a2, F.r, 'sel');
+  });
+  (T.ghost || []).forEach(g => { s += sector(F.V[g.v], g.a1, g.a2, F.r + 6, 'gw'); });
+  s += F.lines;
+  F.A.forEach(A => { A.pos = angPos(F, A); s += txt(A.pos, A.lab, A.known ? 'tx' : A.goal ? 'tx tg' : 'ts'); });
+  return s;
+}
+const kette = T => T.lines.map(([a, b]) => `<div class="hl"><span>${a}</span><small>${b}</small></div>`).join('');
+function hitAngle(T, p) {
+  const F = T.F; let best = null, bd = 1e9;
+  F.A.forEach((A, i) => {
+    const V = F.V[A.v], d = dist(p, V);
+    if (nrm(dir(V, p) - A.a1) <= nrm(A.a2 - A.a1) && d < F.r + 30 && d < bd) { bd = d; best = i; }
+    if (A.pos && dist(p, A.pos) < 22 && dist(p, A.pos) < bd) { bd = dist(p, A.pos); best = i; }
+  });
+  return best;
+}
+function proofTap(T, p) {
+  const i = hitAngle(T, p); if (i === null) return;
+  const A = T.F.A[i];
+  if (T.ph === 's') {
+    if (i === T.sel.t) return;
+    if (!A.known) { say(`${A.name} kennst du noch nicht. Tippe einen bekannten Winkel an.`, 'bad'); return render(); }
+    T.sel.s = i; return proofCheck(T);
+  }
+  if (A.known) { say(`${A.name} kennst du schon. Tippe einen Winkel an, den du ausrechnen willst.`, ''); return render(); }
+  T.sel = { t: i }; T.ph = 'c'; T.ghost = []; T.val = ''; say('', ''); render();
+}
+function proofCheck(T) {
+  const r = claim(T);
+  if (!r.ok) { T.ph = 'c'; delete T.sel.s; return miss(r.msg); }
+  T.ghost = []; T.ph = 'v'; T.val = '';
+  say(`Richtig, ${CARDS[T.sel.c]}. Wie groß ist ${T.F.A[T.sel.t].name}?`, 'good'); render();
+}
+function proofGo(T) {
+  if (T.ph !== 'v' || !T.val) return;
+  const val = parseInt(T.val, 10), e = expect(T);
+  if (val !== e.v) { T.val = ''; return miss(diagnose(T, val, e)); }
+  T.F.A[T.sel.t].known = true; T.lines.push(heft(T, e)); T.sel = null; T.ph = 't'; T.val = '';
+  if (T.F.A.every(x => !x.goal || x.known)) return win();
+  say('Richtig! Weiter mit dem nächsten Winkel.', 'good'); render();
+}
+function proof(F, given, goals, cards, text, sig) {
+  given.forEach(i => { F.A[i].known = true; }); goals.forEach(i => { F.A[i].goal = true; });
+  return { sig, type: 'proof', F, cards, text, ph: 't', sel: null, ghost: [], val: '', lines: [], draw: proofDraw, read: kette, tip: proofTip, explain: 'Alles begründet.' };
+}
+
+// ---------- 1 Winkel an Kreuzungen ----------
+function crossFigure(a) {
+  const M0 = P(200, 150), V = [M0];
+  const A = [ang(0, 0, a, 'α', a), ang(0, a, 180, 'β', 180 - a), ang(0, 180, 180 + a, 'γ', a), ang(0, 180 + a, 360, 'δ', 180 - a)];
+  return { V, rays: [[0, a, 180, 180 + a]], A, polys: [], r: 34, cap: 90, lines: line(polar(M0, 260, 0), polar(M0, 260, 180)) + line(polar(M0, 260, a), polar(M0, 260, a + 180)) };
+}
+const crossA = () => { let a; do a = rnd(25, 155); while (a === 90); return a; };
+function crossOne() {
+  const a = crossA(), g = rnd(0, 3), t = (g + rnd(1, 3)) % 4, F = crossFigure(a);
+  return proof(F, [g], [t], ['ne', 'sc'], `Bestimme ${F.A[t].name}.`, `${a},${g},${t}`);
+}
+function crossAll() {
+  const a = crossA(), g = rnd(0, 3), F = crossFigure(a);
+  return proof(F, [g], [0, 1, 2, 3].filter(i => i !== g), ['ne', 'sc'], 'Bestimme alle Winkel mit ?.', `${a},${g}`);
+}
+
+// ---------- 2 Stufenwinkel und Wechselwinkel ----------
+function parFigure(a, tl = 0) {
+  const F0 = P(200, 152), onF = y => P(F0.x + (F0.y - y) / Math.tan(rad(a)), y), G0 = onF(92), H0 = onF(212);
+  const nm = ['α', 'β', 'γ', 'δ'], A = [];
+  [0, tl].forEach((u, k) => [[u, a], [a, u + 180], [u + 180, a + 180], [a + 180, u + 360]].forEach((x, i) => A.push(ang(k, x[0], x[1], nm[i] + (k ? '₁' : ''), Math.round(i % 2 ? 180 - (a - u) : a - u)))));
+  const hy = polar(H0, (390 - H0.x) / Math.cos(rad(tl)), tl).y;
+  const lines = line(polar(G0, 300, 0), polar(G0, 300, 180)) + line(polar(H0, 300, tl), polar(H0, 300, tl + 180)) + line(polar(F0, 220, a), polar(F0, 220, a + 180))
+    + txt(P(390, G0.y - 11), 'g', 'ts') + txt(P(390, hy - 11), 'h', 'ts') + txt(polar(F0, 16, a - 90), 'f', 'ts');
+  return { V: [G0, H0], rays: [[0, a, 180, 180 + a], [tl, a, tl + 180, a + 180]], A, polys: [], r: 26, cap: 62, lines };
+}
+const parA = () => { let a; do a = rnd(35, 145); while (a === 90 || Math.abs(a - 90) < 6); return a; };
+function parOne() {
+  const a = parA(), k = rnd(0, 1), i = rnd(0, 3), j = pick([i, (i + 2) % 4]), F = parFigure(a), g = k * 4 + i, t = (1 - k) * 4 + j;
+  return proof(F, [g], [t], ['ne', 'sc', 'st', 'we'], `Bestimme ${F.A[t].name}.`, `${a},${g},${t}`);
+}
+function parTwo() {
+  const a = parA(), k = rnd(0, 1), i = rnd(0, 3), j = (i + pick([1, 3])) % 4, F = parFigure(a), g = k * 4 + i, t = (1 - k) * 4 + j;
+  return proof(F, [g], [t], ['ne', 'sc', 'st', 'we'], `Bestimme ${F.A[t].name}. Du brauchst zwei Schritte.`, `${a},${g},${t}`);
+}
+let pqFirst = true;
+function parQ() {
+  const a = parA(), d = pqFirst ? 2 : pick([-2, 0, 2]); pqFirst = false;
+  const F = parFigure(a, d), A1 = F.A[0], A2 = F.A[4];
+  return {
+    sig: `${a},${d}`, type: 'choice', text: 'Sind g und h parallel?', opts: ['Ja, parallel', 'Nein, nicht parallel'], right: d ? 1 : 0, off: [],
+    explain: d ? `α = ${A1.val}° und α₁ = ${A2.val}°. Die Stufenwinkel sind verschieden, also sind g und h nicht parallel.` : `α = α₁ = ${A1.val}°. Die Stufenwinkel sind gleich, also sind g und h parallel.`,
+    draw() { A1.lab = `α = ${A1.val}°`; A2.lab = `α₁ = ${A2.val}°`; return sector(F.V[0], A1.a1, A1.a2, F.r, 'wd c1') + sector(F.V[1], A2.a1, A2.a2, F.r, 'wd c1') + F.lines + txt(angPos(F, A1), A1.lab) + txt(angPos(F, A2), A2.lab); }
+  };
+}
+
+// ---------- 3 Winkelsumme ----------
+// Vieleck gegen den Uhrzeigersinn. Innenwinkel an Ecke i von Richtung zur nächsten bis Richtung zur vorigen Ecke.
+function polyFigure(ps, vals) {
+  const n = ps.length, nm = ['α', 'β', 'γ', 'δ'];
+  const A = ps.map((v, i) => ang(i, dir(v, ps[(i + 1) % n]), dir(v, ps[(i + n - 1) % n]), nm[i], vals[i], { out: 1 }));
+  return { V: ps.slice(), rays: ps.map((v, i) => [dir(v, ps[(i + 1) % n]), dir(v, ps[(i + n - 1) % n])]), A, polys: [A.map((x, i) => i)], r: 24, cap: 70, lines: poly(ps) };
+}
+function triOne() {
+  const [al, be, ga] = triAngles(), u = rnd(0, 2), F = polyFigure(tri(al, be, [70, 45, 330, 265]), [al, be, ga]);
+  return proof(F, [0, 1, 2].filter(i => i !== u), [u], ['ne', 'su'], `Bestimme ${F.A[u].name}.`, `${al},${be},${u}`);
+}
+function quadOne() {
+  const q = quadGen(), u = rnd(0, 3), F = polyFigure(fit(q.pts, 70, 40, 330, 265), q.ang);
+  return proof(F, [0, 1, 2, 3].filter(i => i !== u), [u], ['ne', 'su'], `Bestimme ${F.A[u].name}.`, q.ang.join() + ',' + u);
+}
+function triTwo() {
+  const [al, be, ga] = triAngles(), ps = tri(al, be, [50, 50, 290, 265]), F = polyFigure(ps, [al, be, ga]), B = ps[1], e = dir(ps[0], B);
+  F.A.push(ang(1, e, dir(B, ps[2]), 'ε', 180 - be));
+  F.rays[1].push(e);
+  F.lines += line(B, polar(B, 80, e));
+  return proof(F, [0, 3], [2], ['ne', 'su'], 'Bestimme γ.', `${al},${be}`);
+}
+
 // ---------- Themen ----------
 const TOPICS = [
   { name: 'Winkel an Kreuzungen', levels: [
-    { name: 'Gerade drehen', need: 3, gen: crossDrag },
-    { name: 'Ein Winkel fehlt', need: 5, gen: () => crossNum(false) },
-    { name: 'Drei Winkel fehlen', need: 4, gen: () => crossNum(true) }] },
+    { name: 'Ein Winkel', need: 5, gen: crossOne },
+    { name: 'Alle vier Winkel', need: 3, gen: crossAll }] },
+  { name: 'Stufenwinkel und Wechselwinkel', levels: [
+    { name: 'Ein Schritt', need: 5, gen: parOne },
+    { name: 'Zwei Schritte', need: 4, gen: parTwo },
+    { name: 'Parallel oder nicht?', need: 5, gen: parQ }] },
   { name: 'Winkelsumme im Dreieck und Viereck', levels: [
-    { name: 'Dreieck', need: 5, gen: triNum },
-    { name: 'Viereck', need: 5, gen: quadNum },
-    { name: 'Dreieck mit Nebenwinkel', need: 4, gen: triExt }] },
+    { name: 'Dreieck', need: 4, gen: triOne },
+    { name: 'Viereck', need: 3, gen: quadOne },
+    { name: 'Dreieck mit Nebenwinkel', need: 3, gen: triTwo }] },
   { name: 'Mittelsenkrechte und Winkelhalbierende', levels: [
     { name: 'Gleich weit von A und B', need: 2, gen: msDrag },
     { name: 'Gleich weit von beiden Schenkeln', need: 2, gen: whDrag },
@@ -634,8 +790,8 @@ const TOPICS = [
 let S = {}, G = null;
 // Schon gestellte Aufgaben je Level, damit sich nichts wiederholt.
 const SEEN = {};
-try { S = JSON.parse(localStorage.getItem('geo-sterne') || '{}') || {}; } catch (e) { S = {}; }
-const save = () => { try { localStorage.setItem('geo-sterne', JSON.stringify(S)); } catch (e) {} };
+try { S = JSON.parse(localStorage.getItem('geo-sterne-2') || '{}') || {}; } catch (e) { S = {}; }
+const save = () => { try { localStorage.setItem('geo-sterne-2', JSON.stringify(S)); } catch (e) {} };
 const stars = n => '★'.repeat(n) + '☆'.repeat(3 - n);
 const say = (m, c) => { G.msg = m; G.mc = c; };
 
@@ -682,6 +838,15 @@ function render() {
     h += T.opts.map((o, i) => `<button class="opt${T.off[i] ? ' off' : ''}${T.ok && i === T.right ? ' yes' : ''}" data-o="${i}"${T.off[i] || T.ok ? ' disabled' : ''}>${o}</button>`).join('');
   } else if (T.type === 'steps') {
     h += T.order.map(i => { const d = T.done.includes(i); return `<button class="opt${d ? ' yes' : ''}" data-s="${i}"${d ? ' disabled' : ''}>${d ? (T.done.indexOf(i) + 1) + '. ' : ''}${T.steps[i].t}</button>`; }).join('');
+  } else if (T.type === 'proof') {
+    if (!T.ok) {
+      const tn = T.sel ? T.F.A[T.sel.t].name : '';
+      if (T.ph === 't') h += '<p class="pr">Tippe einen Winkel an, den du ausrechnen willst.</p>';
+      if (T.ph === 'c') h += `<p class="pr">Wie hängt ${tn} mit einem bekannten Winkel zusammen?</p><div class="cards">` + T.cards.map(c => `<button data-card="${c}">${CARDS[c]}</button>`).join('') + '</div>';
+      if (T.ph === 's') h += `<p class="pr">${CARDS[T.sel.c]}: Tippe den bekannten Winkel an.</p><div class="cards"><button data-back="1">Andere Karte</button></div>`;
+      if (T.ph === 'v') h += `<div class="chips"><span class="chip act">${tn} = <b>${T.val || '?'}</b>°</span></div><div class="pad">` + [1, 2, 3, 4, 5, 6, 7, 8, 9].map(d => `<button data-d="${d}">${d}</button>`).join('') + '<button data-d="x">⌫</button><button data-d="0">0</button><button class="go" data-go="1">Prüfen</button></div>';
+      h += '<div class="cards"><button data-tip="1">Tipp</button></div>';
+    }
   } else if (T.type === 'con') {
     if (!T.ok) h += `<div class="tools"><button data-tool="c"${T.tool === 'c' ? ' class="act"' : ''}>Zirkel</button><button data-tool="l"${T.tool === 'l' ? ' class="act"' : ''}>Lineal</button><button data-undo="1">Zurück</button><button data-tip="1">Tipp</button></div>`;
   } else if (!T.ok) h += `<button class="go wide" data-go="1">${T.btn || 'Prüfen'}</button>`;
@@ -693,6 +858,7 @@ function win() { const T = G.T; T.ok = true; G.solved++; say('Richtig! ' + (T.ex
 function miss(m) { G.mistakes++; say(m, 'bad'); render(); }
 function go() {
   const T = G.T; if (T.ok) return;
+  if (T.type === 'proof') return proofGo(T);
   if (T.type === 'num') {
     if (T.fields.some(x => !x.val)) { say('Trag erst alle Werte ein.', ''); return render(); }
     let all = true; T.fields.forEach(x => { x.bad = parseInt(x.val, 10) !== x.ans; if (x.bad) all = false; });
@@ -704,7 +870,9 @@ function go() {
   miss(r.msg);
 }
 function key(d) {
-  const T = G.T; if (T.ok || T.type !== 'num') return;
+  const T = G.T; if (T.ok) return;
+  if (T.type === 'proof') { if (T.ph !== 'v') return; T.val = d === 'x' ? T.val.slice(0, -1) : T.val.length < 3 ? (T.val === '0' ? '' : T.val) + d : T.val; return render(); }
+  if (T.type !== 'num') return;
   const x = T.fields[G.af]; x.bad = false;
   if (d === 'x') x.val = x.val.slice(0, -1); else if (x.val.length < 3) x.val = (x.val === '0' ? '' : x.val) + d;
   render();
@@ -730,7 +898,9 @@ $('ctl').addEventListener('click', e => {
   if (d.go) return go();
   if (d.tool) { T.tool = d.tool; T.sel = null; return render(); }
   if (d.undo) { T.objs.pop(); T.sel = null; say('', ''); return render(); }
-  if (d.tip) { if (!T.tipped) { T.tipped = true; G.mistakes++; } say(T.tip, ''); return render(); }
+  if (d.tip) { if (!T.tipped) { T.tipped = true; G.mistakes++; } say(typeof T.tip === 'function' ? T.tip(T) : T.tip, ''); return render(); }
+  if (d.card) { T.sel.c = d.card; if (d.card === 'su') return proofCheck(T); T.ph = 's'; say('', ''); return render(); }
+  if (d.back) { T.ph = 'c'; delete T.sel.c; say('', ''); return render(); }
   if (d.d !== undefined) return key(d.d);
   if (d.f !== undefined) { G.af = +d.f; return render(); }
   if (d.o !== undefined && !T.ok) { const i = +d.o; if (i === T.right) return win(); T.off[i] = true; return miss('Das passt nicht. Schau noch einmal genau hin.'); }
@@ -751,6 +921,7 @@ const sp = e => { const r = fig.getBoundingClientRect(); return P(Math.max(8, Ma
 fig.addEventListener('pointerdown', e => {
   const T = G && G.T; if (!T || T.ok) return;
   const p = sp(e); let bd = 60; dragN = null;
+  if (T.type === 'proof') { proofTap(T, p); return; }
   if (T.type === 'con') {
     let hd = 30, hit = null; cpts(T).forEach(q => { const d = dist(p, q); if (d < hd) { hd = d; hit = q; } });
     if (hit) { T.from = P(hit.x, hit.y); T.down = p; T.last = null; try { fig.setPointerCapture(e.pointerId); } catch (x) {} e.preventDefault(); }
@@ -767,6 +938,7 @@ fig.addEventListener('pointermove', e => {
 const drop = () => { dragN = null; if (G && G.T && G.T.type === 'con' && G.T.from) conDrop(G.T); };
 fig.addEventListener('pointerup', drop); fig.addEventListener('pointercancel', drop);
 home();
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 </script>
 </body>
 </html>
