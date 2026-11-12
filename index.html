@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:">
+<title>Winkel und Dreiecke</title>
+<style>
+:root{--bg:#f4f3ee;--card:#fff;--fg:#1d2330;--mut:#8a90a0;--line:#dcdbd4;--c1:#3b82f6;--c2:#f59e0b;--c3:#10b981;--c4:#ec4899;--ok:#16a34a;--bad:#dc2626;--star:#f5b301}
+@media (prefers-color-scheme:dark){:root{--bg:#14171d;--card:#1f242d;--fg:#e8eaf0;--mut:#8b93a5;--line:#333a47;--ok:#34d399;--bad:#f87171}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{padding:0 12px calc(24px + env(safe-area-inset-bottom));max-width:580px;margin:0 auto}
+header{display:flex;align-items:center;gap:10px;padding:12px 0}
+header h1{font-size:18px;margin:0;flex:1}
+#total{font-weight:700;color:var(--star);white-space:nowrap}
+button{font:inherit;color:inherit;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:10px 12px;cursor:pointer;touch-action:manipulation}
+button:disabled{cursor:default}
+#back{width:44px;height:44px;font-size:24px;padding:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
+.card h2{font-size:16px;margin:0 0 10px}
+.lv{display:flex;justify-content:space-between;align-items:center;width:100%;margin-top:6px;text-align:left}
+.lv small{display:block;color:var(--mut);font-size:13px}
+.st{color:var(--star);font-size:20px;letter-spacing:2px}
+#lvl{color:var(--mut);font-size:14px}
+#dots{display:flex;gap:6px;margin:8px 0 10px}
+#dots i{flex:1;height:8px;border-radius:4px;background:var(--line)}
+#dots i.on{background:var(--ok)}
+#text{font-size:18px;font-weight:600;min-height:50px}
+#fig{display:block;width:100%;aspect-ratio:4/3;background:var(--card);border:1px solid var(--line);border-radius:16px;touch-action:none;user-select:none;-webkit-user-select:none;overflow:hidden}
+#read{min-height:24px;margin:8px 2px;font-variant-numeric:tabular-nums}
+.msg{min-height:44px;margin:8px 2px;font-weight:600}
+.msg.good{color:var(--ok)}.msg.bad{color:var(--bad)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.chip{font-size:18px}
+.chip.act{border-color:var(--c1);box-shadow:0 0 0 2px var(--c1)}
+.chip.bad{border-color:var(--bad);color:var(--bad)}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pad button{font-size:22px;padding:12px 0}
+.go{background:var(--c1);border-color:var(--c1);color:#fff;font-weight:700}
+.wide{width:100%;font-size:18px;padding:14px}
+.opt{display:block;width:100%;margin-bottom:8px;font-size:17px;text-align:left;padding:14px}
+.opt.off{opacity:.4;text-decoration:line-through}
+.opt.yes{border-color:var(--ok);color:var(--ok);font-weight:700}
+.tools{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.tools .act{border-color:var(--c1);box-shadow:0 0 0 2px var(--c1);font-weight:700}
+#next{margin-top:6px;background:var(--ok);border-color:var(--ok)}
+#fin{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:20px}
+#fin .box{background:var(--card);border-radius:20px;padding:24px;width:100%;max-width:360px;text-align:center}
+#fst{font-size:56px;color:var(--star);letter-spacing:6px;animation:pop .5s cubic-bezier(.3,1.6,.5,1)}
+@keyframes pop{from{transform:scale(.2);opacity:0}to{transform:scale(1);opacity:1}}
+#fin button{display:block;width:100%;margin-top:8px}
+svg .ln{stroke:var(--fg);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+svg .fa{stroke:var(--mut);stroke-width:1.5;fill:none}
+svg .da{stroke:var(--mut);stroke-width:1.5;stroke-dasharray:5 4;fill:none}
+svg .hi{stroke:var(--ok);stroke-width:2.5;fill:none}
+svg .hs{stroke:var(--c1);stroke-width:5;fill:none;stroke-linecap:round}
+svg .cc{stroke:var(--c1);stroke-width:2;fill:none}
+svg .cs{stroke:var(--c2);stroke-width:1.5;stroke-dasharray:6 4;fill:none}
+svg .wd{stroke:none;opacity:.55}
+svg .c0{fill:var(--mut);opacity:.22}svg .c1{fill:var(--c1)}svg .c2{fill:var(--c2)}svg .c3{fill:var(--c3)}svg .c4{fill:var(--c4)}
+svg .pt{fill:var(--fg)}svg .mk{fill:var(--ok)}
+svg .hd{fill:var(--c1);opacity:.25}svg .hd2{fill:var(--c1)}
+svg .ip{fill:var(--c4)}
+svg .tx{fill:var(--fg);font:600 14px system-ui,sans-serif}
+svg .ts{fill:var(--mut);font:500 13px system-ui,sans-serif}
+</style>
+</head>
+<body>
+<header><button id="back" hidden aria-label="Zurück">‹</button><h1>Winkel und Dreiecke</h1><span id="total"></span></header>
+<main id="home"></main>
+<main id="game" hidden>
+  <div id="lvl"></div>
+  <div id="dots"></div>
+  <div id="text"></div>
+  <svg id="fig" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg"></svg>
+  <div id="read"></div>
+  <div id="ctl"></div>
+  <div id="msg" class="msg"></div>
+  <button id="next" class="go wide" hidden>Weiter</button>
+</main>
+<div id="fin" hidden><div class="box">
+  <div id="fst"></div><p id="ftx"></p>
+  <button id="fnext" class="go">Nächstes Level</button>
+  <button id="fagain">Nochmal</button>
+  <button id="fhome">Übersicht</button>
+</div></div>
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+const pick = a => a[rnd(0, a.length - 1)];
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = rnd(0, i); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const rad = d => d * Math.PI / 180, deg = r => r * 180 / Math.PI;
+const P = (x, y) => ({ x, y });
+const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+// Winkel werden mathematisch gezählt (gegen den Uhrzeigersinn, y nach oben).
+const dir = (p, q) => (deg(Math.atan2(-(q.y - p.y), q.x - p.x)) + 360) % 360;
+const polar = (p, r, a) => P(p.x + r * Math.cos(rad(a)), p.y - r * Math.sin(rad(a)));
+const PX = 30; // 1 cm
+const mm = px => Math.round(px / 3);
+const cm = px => (mm(px) / 10).toFixed(1).replace('.', ',');
+const f = n => n.toFixed(1);
+
+// ---------- Zeichnen ----------
+const line = (a, b, c = 'ln') => `<line class="${c}" x1="${f(a.x)}" y1="${f(a.y)}" x2="${f(b.x)}" y2="${f(b.y)}"/>`;
+const circ = (m, r, c = 'ln') => `<circle class="${c}" cx="${f(m.x)}" cy="${f(m.y)}" r="${f(r)}"/>`;
+const dot = (p, c = 'pt') => `<circle class="${c}" cx="${f(p.x)}" cy="${f(p.y)}" r="4"/>`;
+const handle = p => `<circle class="hd" cx="${f(p.x)}" cy="${f(p.y)}" r="15"/><circle class="hd2" cx="${f(p.x)}" cy="${f(p.y)}" r="6"/>`;
+const txt = (p, s, c = 'tx') => `<text class="${c}" x="${f(p.x)}" y="${f(p.y)}" text-anchor="middle" dominant-baseline="central">${s}</text>`;
+const poly = (ps, c = 'ln') => `<polygon class="${c}" points="${ps.map(p => f(p.x) + ',' + f(p.y)).join(' ')}"/>`;
+function wedge(v, a1, a2, r, c, label) {
+  const d = ((a2 - a1) % 360 + 360) % 360;
+  const p1 = polar(v, r, a1), p2 = polar(v, r, a1 + d);
+  let s = `<path class="wd ${c}" d="M${f(v.x)} ${f(v.y)}L${f(p1.x)} ${f(p1.y)}A${r} ${r} 0 ${d > 180 ? 1 : 0} 0 ${f(p2.x)} ${f(p2.y)}Z"/>`;
+  if (label) {
+    const k = 6 + 3.2 * String(label).length;
+    const lr = Math.min(120, Math.max(r + 14, k / Math.sin(rad(Math.max(d, 10) / 2))));
+    s += txt(polar(v, lr, a1 + d / 2), label);
+  }
+  return s;
+}
+function inner(v, p, q, r, c, label) {
+  let a1 = dir(v, p), a2 = dir(v, q);
+  if (((a2 - a1) % 360 + 360) % 360 > 180) [a1, a2] = [a2, a1];
+  return wedge(v, a1, a2, r, c, label);
+}
+const angleAt = (v, p, q) => { const d = Math.abs(dir(v, p) - dir(v, q)); return d > 180 ? 360 - d : d; };
+const cen = ps => P(ps.reduce((s, p) => s + p.x, 0) / ps.length, ps.reduce((s, p) => s + p.y, 0) / ps.length);
+const out = (p, c, d = 15) => { const l = dist(p, c) || 1; return P(p.x + (p.x - c.x) / l * d, p.y + (p.y - c.y) / l * d); };
+function fit(pts, x0, y0, x1, y1) {
+  const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
+  const a = Math.min(...xs), b = Math.max(...xs), c = Math.min(...ys), d = Math.max(...ys);
+  const s = Math.min((x1 - x0) / (b - a), (y1 - y0) / (d - c));
+  const ox = (x0 + x1) / 2 - s * (a + b) / 2, oy = (y0 + y1) / 2 - s * (c + d) / 2;
+  return pts.map(p => P(ox + s * p.x, oy + s * p.y));
+}
+function tri(al, be, box) {
+  const b = Math.sin(rad(be)) / Math.sin(rad(180 - al - be));
+  return fit([P(0, 0), P(1, 0), P(b * Math.cos(rad(al)), -b * Math.sin(rad(al)))], ...box);
+}
+function isect(p, u, q, v) {
+  const det = u.x * v.y - u.y * v.x; if (Math.abs(det) < 1e-9) return null;
+  const dx = q.x - p.x, dy = q.y - p.y;
+  const t = (dx * v.y - dy * v.x) / det, s = (dx * u.y - dy * u.x) / det;
+  return { t, s, pt: P(p.x + t * u.x, p.y + t * u.y) };
+}
+function ccenter(A, B, C) {
+  const d = 2 * (A.x * (B.y - C.y) + B.x * (C.y - A.y) + C.x * (A.y - B.y));
+  const a2 = A.x * A.x + A.y * A.y, b2 = B.x * B.x + B.y * B.y, c2 = C.x * C.x + C.y * C.y;
+  return P((a2 * (B.y - C.y) + b2 * (C.y - A.y) + c2 * (A.y - B.y)) / d, (a2 * (C.x - B.x) + b2 * (A.x - C.x) + c2 * (B.x - A.x)) / d);
+}
+function icenter(A, B, C) {
+  const a = dist(B, C), b = dist(A, C), c = dist(A, B), s = a + b + c;
+  return P((a * A.x + b * B.x + c * C.x) / s, (a * A.y + b * B.y + c * C.y) / s);
+}
+const dline = (p, a, b) => Math.abs((b.x - a.x) * (a.y - p.y) - (a.x - p.x) * (b.y - a.y)) / dist(a, b);
+function foot(p, a, b) {
+  const l = dist(a, b), ux = (b.x - a.x) / l, uy = (b.y - a.y) / l, t = (p.x - a.x) * ux + (p.y - a.y) * uy;
+  return P(a.x + t * ux, a.y + t * uy);
+}
+const lab = (T, n, v) => { const fl = T.fields.find(x => x.name === n); return fl ? `${n}=${fl.val ? fl.val + '°' : '?'}` : `${n}=${v}°`; };
+// Winkelbeschriftung außen an der Ecke, damit sie auch bei spitzen Winkeln lesbar bleibt.
+const olab = (p, c, s) => {
+  const l = dist(p, c) || 1, ux = (p.x - c.x) / l, uy = (p.y - c.y) / l, d = 14 + 4 * s.length * Math.abs(ux);
+  return txt(P(Math.max(28, Math.min(372, p.x + ux * d)), Math.max(10, Math.min(290, p.y + uy * d))), s);
+};
+const strip = (m, angs, cls, r) => { let a = 0, s = ''; angs.forEach((w, i) => { s += wedge(m, a, a + w, r, cls[i]); a += w; }); return s; };
+const queue = (G, arr) => { if (!G.q || !G.q.length) G.q = shuffle(arr); return G.q.pop(); };
+const acute = () => { let al, be; do { al = rnd(50, 75); be = rnd(50, 75); } while (180 - al - be < 45); return tri(al, be, [110, 90, 290, 230]); };
+
+// ---------- 1 Winkel an Kreuzungen ----------
+const GR = { al: 'α', be: 'β', ga: 'γ', de: 'δ' }, KEYS = ['al', 'be', 'ga', 'de'];
+function crossFig(a, L) {
+  const m = P(200, 150), R = 175, r = 34;
+  let s = '';
+  [['al', 0, a, 'c1'], ['be', a, 180, 'c2'], ['ga', 180, 180 + a, 'c1'], ['de', 180 + a, 360, 'c2']]
+    .forEach(([k, x, y, c]) => { s += wedge(m, x, y, r, L[k] !== undefined ? c : 'c0', L[k]); });
+  return s + line(polar(m, R, 0), polar(m, R, 180)) + line(polar(m, R, a), polar(m, R, a + 180));
+}
+function crossDrag() {
+  let target; do target = rnd(6, 30) * 5; while (target === 90);
+  const m = P(200, 150);
+  return {
+    sig: target, type: 'drag', a: target > 90 ? 60 : 120, pts: { H: polar(m, 140, target > 90 ? 60 : 120) },
+    text: `Dreh die Gerade, bis α = ${target}° groß ist.`,
+    explain: 'Gegenüber liegt immer der gleiche Winkel. Zwei Winkel nebeneinander ergeben zusammen 180°.',
+    move(T, n, p) { let a = Math.round(dir(m, p)); if (a > 180) a -= 180; a = Math.max(25, Math.min(155, a)); T.a = a; T.pts.H = polar(m, 140, a); },
+    check(T) { return T.a === target ? { ok: true } : { msg: `α ist gerade ${T.a}° groß.` }; },
+    draw(T) { const a = T.a; return crossFig(a, { al: `α=${a}°`, be: `β=${180 - a}°`, ga: `γ=${a}°`, de: `δ=${180 - a}°` }) + (T.ok ? '' : handle(T.pts.H)); }
+  };
+}
+function crossNum(all) {
+  let a; do a = all ? rnd(25, 155) : rnd(5, 31) * 5; while (a === 90);
+  const val = { al: a, be: 180 - a, ga: a, de: 180 - a };
+  const gi = rnd(0, 3), g = KEYS[gi], off = pick([1, 2, 3]);
+  const ask = all ? KEYS.filter(k => k !== g) : [KEYS[(gi + off) % 4]];
+  const fields = ask.map(k => ({ k, name: GR[k], ans: val[k], unit: '°', val: '' }));
+  return {
+    sig: Math.min(a, 180 - a), type: 'num', fields,
+    text: `${GR[g]} = ${val[g]}°. ` + (all ? 'Bestimme die anderen drei Winkel.' : `Wie groß ist ${fields[0].name}?`),
+    tip: 'Gegenüber liegt der gleiche Winkel. Nebeneinander sind es zusammen 180°.',
+    explain: all ? 'Scheitelwinkel sind gleich groß. Nebenwinkel ergeben zusammen 180°.' : off === 2 ? 'Scheitelwinkel sind gleich groß.' : 'Nebenwinkel ergeben zusammen 180°.',
+    draw(T) { const L = {}; L[g] = `${GR[g]}=${val[g]}°`; T.fields.forEach(x => { L[x.k] = `${x.name}=${x.val ? x.val + '°' : '?'}`; }); return crossFig(a, L); }
+  };
+}
+
+// ---------- 2 Innenwinkelsumme ----------
+function triAngles() { let al, be, ga; do { al = rnd(6, 16) * 5; be = rnd(6, 16) * 5; ga = 180 - al - be; } while (ga < 30); return [al, be, ga]; }
+function triNum() {
+  const ang = triAngles(), ps = tri(ang[0], ang[1], [70, 30, 330, 185]), nm = ['α', 'β', 'γ'], i = rnd(0, 2);
+  return {
+    sig: ang.slice().sort().join(), type: 'num', fields: [{ name: nm[i], ans: ang[i], unit: '°', val: '' }],
+    text: `Wie groß ist ${nm[i]}?`, tip: 'Im Dreieck sind alle drei Winkel zusammen 180°.',
+    explain: 'Die drei Winkel passen zusammen genau an eine gerade Linie. Das sind 180°.',
+    draw(T) {
+      const c = cen(ps); let s = '';
+      ps.forEach((p, j) => { s += inner(p, ps[(j + 1) % 3], ps[(j + 2) % 3], 26, 'c' + (j + 1)); });
+      s += poly(ps); ps.forEach((p, j) => { s += olab(p, c, lab(T, nm[j], ang[j])); });
+      return s + line(P(130, 282), P(270, 282), 'fa') + strip(P(200, 282), ang, ['c1', 'c2', 'c3'], 46);
+    }
+  };
+}
+function quadGen() {
+  for (let i = 0; i < 300; i++) {
+    const al = rnd(12, 24) * 5, be = rnd(12, 24) * 5, ga = rnd(12, 24) * 5, de = 360 - al - be - ga;
+    if (de < 50 || de > 130) continue;
+    const p = 0.6 + Math.random() * 0.5, A = P(0, 0), B = P(1, 0), D = P(p * Math.cos(rad(al)), p * Math.sin(rad(al)));
+    const db = 180 - be, dd = al + 180 + de;
+    const r = isect(B, P(Math.cos(rad(db)), Math.sin(rad(db))), D, P(Math.cos(rad(dd)), Math.sin(rad(dd))));
+    if (!r || r.t < 0.35 || r.s < 0.35 || r.t > 2 || r.s > 2) continue;
+    return { ang: [al, be, ga, de], pts: [A, B, r.pt, D].map(q => P(q.x, -q.y)) };
+  }
+  return { ang: [90, 90, 90, 90], pts: [P(0, 0), P(1.4, 0), P(1.4, -1), P(0, -1)] };
+}
+function quadNum() {
+  const q = quadGen(), ang = q.ang, ps = fit(q.pts, 80, 30, 320, 168), nm = ['α', 'β', 'γ', 'δ'], i = rnd(0, 3);
+  return {
+    sig: ang.slice().sort().join(), type: 'num', fields: [{ name: nm[i], ans: ang[i], unit: '°', val: '' }],
+    text: `Wie groß ist ${nm[i]}?`, tip: 'Im Viereck sind alle vier Winkel zusammen 360°.',
+    explain: 'Ein Viereck besteht aus zwei Dreiecken. Deshalb sind es zusammen 2 · 180° = 360°.',
+    draw(T) {
+      const c = cen(ps); let s = line(ps[0], ps[2], 'da');
+      ps.forEach((p, j) => { s += inner(p, ps[(j + 1) % 4], ps[(j + 3) % 4], 24, 'c' + (j + 1)); });
+      s += poly(ps); ps.forEach((p, j) => { s += olab(p, c, lab(T, nm[j], ang[j])); });
+      return s + strip(P(200, 250), ang, ['c1', 'c2', 'c3', 'c4'], 40);
+    }
+  };
+}
+function triExt() {
+  const [al, be, ga] = triAngles(), ps = tri(al, be, [60, 40, 300, 235]), ex = 180 - be;
+  return {
+    sig: [al, be, ga].sort().join(), type: 'num', fields: [{ name: 'β', ans: be, unit: '°', val: '' }, { name: 'γ', ans: ga, unit: '°', val: '' }],
+    text: 'Bestimme β und γ.', tip: 'β und der Winkel daneben ergeben zusammen 180°. Danach fehlt im Dreieck nur noch γ.',
+    explain: 'Erst der Nebenwinkel, dann die Winkelsumme im Dreieck.',
+    draw(T) {
+      const c = cen(ps), [A, B, C] = ps;
+      let s = wedge(B, 0, ex, 26, 'c4', ex + '°');
+      s += inner(A, B, C, 26, 'c1') + inner(B, A, C, 26, 'c2') + inner(C, A, B, 26, 'c3');
+      s += poly(ps) + line(B, P(B.x + 80, B.y));
+      return s + olab(A, c, `α=${al}°`) + txt(P(B.x, B.y + 18), lab(T, 'β', be)) + olab(C, c, lab(T, 'γ', ga));
+    }
+  };
+}
+
+// ---------- 3 Mittelsenkrechte und Winkelhalbierende ----------
+function msDrag() {
+  const th = rnd(-25, 25), h = rnd(60, 90), M = P(200, 165), A = polar(M, h, 180 + th), B = polar(M, h, th);
+  const u = P((B.x - A.x) / (2 * h), (B.y - A.y) / (2 * h));
+  const off = p => (p.x - M.x) * u.x + (p.y - M.y) * u.y;
+  return {
+    sig: th + ',' + h, type: 'drag', btn: 'Punkt setzen', marks: [], pts: { P: P(105, 60) },
+    text: 'Finde drei verschiedene Stellen, an denen P von A und B gleich weit weg ist.',
+    explain: 'Alle diese Punkte liegen auf einer Geraden. Sie heißt Mittelsenkrechte und geht senkrecht durch die Mitte von AB.',
+    move(T, n, p) { const o = off(p); if (Math.abs(o) < 6) { p.x -= o * u.x; p.y -= o * u.y; } T.pts.P = p; },
+    read(T) { return `P bis A: <b>${cm(dist(T.pts.P, A))} cm</b> · P bis B: <b>${cm(dist(T.pts.P, B))} cm</b>`; },
+    check(T) {
+      const p = T.pts.P;
+      if (mm(dist(p, A)) !== mm(dist(p, B))) return { msg: 'P ist noch nicht gleich weit von A und B weg.' };
+      if (T.marks.some(m => dist(m, p) < 30)) return { more: true, msg: 'Hier in der Nähe liegt schon ein Punkt. Such eine andere Stelle.' };
+      T.marks.push(P(p.x, p.y));
+      return T.marks.length < 3 ? { more: true, msg: `Gefunden! Noch ${3 - T.marks.length}.` } : { ok: true };
+    },
+    draw(T) {
+      const p = T.pts.P; let s = '';
+      if (T.ok) s += line(P(M.x + 400 * u.y, M.y - 400 * u.x), P(M.x - 400 * u.y, M.y + 400 * u.x), 'hi');
+      else s += line(p, A, 'da') + line(p, B, 'da');
+      s += line(A, B) + dot(A) + dot(B) + txt(P(A.x - 6, A.y + 18), 'A') + txt(P(B.x + 6, B.y + 18), 'B');
+      T.marks.forEach(m => { s += dot(m, 'mk'); });
+      return s + (T.ok ? '' : handle(p) + txt(P(p.x + 22, p.y - 14), 'P'));
+    }
+  };
+}
+function whDrag() {
+  const w = rnd(20, 38) * 2, S = P(50, 255), e2 = P(Math.cos(rad(w)), -Math.sin(rad(w))), b = P(Math.cos(rad(w / 2)), -Math.sin(rad(w / 2)));
+  const along = p => (p.x - S.x) * b.x + (p.y - S.y) * b.y, perp = p => (p.x - S.x) * b.y - (p.y - S.y) * b.x;
+  const d1 = p => Math.abs(p.y - S.y), d2 = p => Math.abs((p.x - S.x) * e2.y - (p.y - S.y) * e2.x);
+  return {
+    sig: w, type: 'drag', btn: 'Punkt setzen', marks: [], pts: { P: polar(S, 210, w * 0.25) },
+    text: 'Finde drei verschiedene Stellen, an denen P von beiden Schenkeln gleich weit weg ist.',
+    explain: 'Alle diese Punkte liegen auf der Winkelhalbierenden. Sie teilt den Winkel in zwei gleich große Teile.',
+    move(T, n, p) { p.y = Math.min(p.y, S.y - 4); const a = along(p); if (Math.abs(perp(p)) < 6 && a > 30) p = P(S.x + a * b.x, S.y + a * b.y); T.pts.P = p; },
+    read(T) { return `Abstand zum unteren Schenkel: <b>${cm(d1(T.pts.P))} cm</b> · zum oberen: <b>${cm(d2(T.pts.P))} cm</b>`; },
+    check(T) {
+      const p = T.pts.P;
+      if (mm(d1(p)) !== mm(d2(p)) || along(p) < 30 || Math.abs(perp(p)) > 12) return { msg: 'P ist noch nicht gleich weit von beiden Schenkeln weg.' };
+      if (T.marks.some(m => dist(m, p) < 30)) return { more: true, msg: 'Hier in der Nähe liegt schon ein Punkt. Such eine andere Stelle.' };
+      T.marks.push(P(p.x, p.y));
+      return T.marks.length < 3 ? { more: true, msg: `Gefunden! Noch ${3 - T.marks.length}.` } : { ok: true };
+    },
+    draw(T) {
+      const p = T.pts.P; let s = '';
+      if (T.ok) s += wedge(S, 0, w / 2, 60, 'c1', w / 2 + '°') + wedge(S, w / 2, w, 60, 'c2', w / 2 + '°') + line(S, polar(S, 400, w / 2), 'hi');
+      else { const t = (p.x - S.x) * e2.x + (p.y - S.y) * e2.y; s += line(p, P(p.x, S.y), 'da') + line(p, P(S.x + t * e2.x, S.y + t * e2.y), 'da'); }
+      s += line(S, polar(S, 340, 0)) + line(S, polar(S, 340, w));
+      T.marks.forEach(m => { s += dot(m, 'mk'); });
+      return s + (T.ok ? '' : handle(p) + txt(P(p.x + 22, p.y - 14), 'P'));
+    }
+  };
+}
+function midNum(G) {
+  const kind = queue(G, ['a', 'b', 'c', 'd', 'e']);
+  const A = P(80, 210), B = P(320, 210), M = P(200, 210), Q = P(200, 90);
+  const seg = extra => line(P(200, 40), P(200, 275), 'hi') + line(A, B) + dot(A) + dot(B) + dot(M) + txt(P(A.x, A.y + 18), 'A') + txt(P(B.x, B.y + 18), 'B') + txt(P(M.x + 14, M.y + 18), 'M') + extra;
+  const sq = `<path class="fa" d="M200 196H214V210"/>`;
+  if (kind === 'a' || kind === 'b') {
+    const W = rnd(4, 14) * 10, S = P(140, 250);
+    const fig = l => wedge(S, 0, W / 2, 55, 'c1', l) + wedge(S, W / 2, W, 55, 'c2') + line(S, polar(S, 190, 0)) + line(S, polar(S, 190, W)) + line(S, polar(S, 215, W / 2), 'hi');
+    return kind === 'a'
+      ? { sig: 'a' + W, type: 'num', fields: [{ name: 'Teilwinkel', ans: W / 2, unit: '°', val: '' }], text: `Der ganze Winkel ist ${W}° groß. Die Winkelhalbierende teilt ihn. Wie groß ist ein Teilwinkel?`, tip: 'Die Winkelhalbierende macht zwei gleich große Teile.', explain: 'Die Winkelhalbierende halbiert den Winkel.', draw(T) { return fig(T.fields[0].val ? T.fields[0].val + '°' : '?'); } }
+      : { sig: 'b' + W, type: 'num', fields: [{ name: 'Winkel', ans: W, unit: '°', val: '' }], text: `Die Winkelhalbierende teilt einen Winkel. Ein Teil ist ${W / 2}° groß. Wie groß ist der ganze Winkel?`, tip: 'Beide Teile sind gleich groß.', explain: 'Zwei gleiche Teile ergeben den ganzen Winkel.', draw() { return fig(W / 2 + '°'); } };
+  }
+  if (kind === 'c') {
+    const L = rnd(2, 7) * 2;
+    return { sig: 'c' + L, type: 'num', fields: [{ name: 'AM', ans: L / 2, unit: 'cm', val: '' }], text: `Die Mittelsenkrechte trifft AB im Punkt M. AB ist ${L} cm lang. Wie lang ist AM?`, tip: 'M liegt genau in der Mitte von AB.', explain: 'Die Mittelsenkrechte geht durch die Mitte der Strecke.', draw() { return seg(sq + txt(P(200, 255), '', 'ts')); } };
+  }
+  if (kind === 'd') {
+    const n = rnd(3, 9);
+    return { sig: 'd' + n, type: 'num', fields: [{ name: 'PB', ans: n, unit: 'cm', val: '' }], text: `P liegt auf der Mittelsenkrechten von AB. PA ist ${n} cm lang. Wie lang ist PB?`, tip: 'Jeder Punkt auf der Mittelsenkrechten ist von A und B gleich weit weg.', explain: 'Auf der Mittelsenkrechten ist es zu A und zu B immer gleich weit.', draw(T) { return seg(sq + line(Q, A, 'da') + line(Q, B, 'da') + dot(Q) + txt(P(Q.x + 14, Q.y - 10), 'P') + txt(P(118, 142), n + ' cm') + txt(P(282, 142), T.fields[0].val ? T.fields[0].val + ' cm' : '?')); } };
+  }
+  return { sig: 'e', type: 'num', fields: [{ name: 'Winkel', ans: 90, unit: '°', val: '' }], text: 'Wie groß ist der Winkel zwischen der Mittelsenkrechten und der Strecke AB?', tip: 'Das Wort senkrecht verrät es.', explain: 'Senkrecht heißt: Es ist ein rechter Winkel.', draw(T) { return wedge(M, 0, 90, 26, 'c1', T.fields[0].val ? T.fields[0].val + '°' : '?') + seg(''); } };
+}
+
+// ---------- 4 In- und Umkreis ----------
+function umDrag() {
+  const ps = acute(), [A, B, C] = ps, U = ccenter(A, B, C), c = cen(ps);
+  let st = P(c.x + 45, c.y - 35); if (dist(st, U) < 20) st = P(c.x - 45, c.y + 20);
+  return {
+    sig: ps.map(p => Math.round(p.x) + ',' + Math.round(p.y)).join(), type: 'drag', pts: { M: st },
+    text: 'Schieb M so, dass der Kreis durch alle drei Ecken geht.',
+    explain: 'Der Mittelpunkt vom Umkreis ist von allen Ecken gleich weit weg. Er liegt dort, wo sich die Mittelsenkrechten treffen.',
+    move(T, n, p) { T.pts.M = dist(p, U) < 8 ? P(U.x, U.y) : p; },
+    read(T) { const m = T.pts.M; return `M bis A: <b>${cm(dist(m, A))}</b> · bis B: <b>${cm(dist(m, B))}</b> · bis C: <b>${cm(dist(m, C))} cm</b>`; },
+    check(T) {
+      const m = T.pts.M, a = mm(dist(m, A));
+      if (dist(m, U) < 8 || (a === mm(dist(m, B)) && a === mm(dist(m, C)))) { T.pts.M = P(U.x, U.y); return { ok: true }; }
+      return { msg: 'Der Kreis geht noch nicht durch alle drei Ecken.' };
+    },
+    draw(T) {
+      const m = T.pts.M; let s = '';
+      if (T.ok) [[A, B], [B, C], [C, A]].forEach(([p, q]) => { const h = P((p.x + q.x) / 2, (p.y + q.y) / 2), l = dist(h, U) || 1; s += line(P(U.x - (h.x - U.x) / l * 400, U.y - (h.y - U.y) / l * 400), P(U.x + (h.x - U.x) / l * 400, U.y + (h.y - U.y) / l * 400), 'hi'); });
+      else ps.forEach(p => { s += line(m, p, 'da'); });
+      s += circ(m, dist(m, A), 'cc') + poly(ps); ps.forEach((p, j) => { s += txt(out(p, c), 'ABC'[j]); });
+      return s + (T.ok ? dot(m) : handle(m));
+    }
+  };
+}
+function inDrag() {
+  const ps = acute(), [A, B, C] = ps, I = icenter(A, B, C), c = cen(ps), sides = [[A, B], [B, C], [C, A]];
+  let st = P(c.x + 28, c.y + 18); if (dist(st, I) < 20) st = P(c.x - 30, c.y + 15);
+  const ds = m => sides.map(([p, q]) => dline(m, p, q));
+  return {
+    sig: ps.map(p => Math.round(p.x) + ',' + Math.round(p.y)).join(), type: 'drag', pts: { M: st },
+    text: 'Schieb M so, dass der Kreis alle drei Seiten berührt.',
+    explain: 'Der Mittelpunkt vom Inkreis ist von allen Seiten gleich weit weg. Er liegt dort, wo sich die Winkelhalbierenden treffen.',
+    move(T, n, p) { T.pts.M = dist(p, I) < 8 ? P(I.x, I.y) : p; },
+    read(T) { const d = ds(T.pts.M); return `Abstand zu AB: <b>${cm(d[0])}</b> · zu BC: <b>${cm(d[1])}</b> · zu CA: <b>${cm(d[2])} cm</b>`; },
+    check(T) {
+      const m = T.pts.M, d = ds(m).map(mm);
+      if (dist(m, I) < 8 || (d[0] === d[1] && d[1] === d[2] && dist(m, I) < 20)) { T.pts.M = P(I.x, I.y); return { ok: true }; }
+      return { msg: 'Der Kreis berührt noch nicht alle drei Seiten.' };
+    },
+    draw(T) {
+      const m = T.pts.M; let s = '';
+      if (T.ok) ps.forEach(p => { s += line(p, P(p.x + (I.x - p.x) * 1.9, p.y + (I.y - p.y) * 1.9), 'hi'); });
+      else sides.forEach(([p, q]) => { s += line(m, foot(m, p, q), 'da'); });
+      s += circ(m, Math.min(...ds(m)), 'cc') + poly(ps); ps.forEach((p, j) => { s += txt(out(p, c), 'ABC'[j]); });
+      return s + (T.ok ? dot(m) : handle(m));
+    }
+  };
+}
+const CQ = [
+  ['Wie heißt dieser Kreis?', 'Umkreis', 'Inkreis', 'u'],
+  ['Wie heißt dieser Kreis?', 'Inkreis', 'Umkreis', 'i'],
+  ['Welche Linien brauchst du für den Umkreis?', 'Mittelsenkrechten', 'Winkelhalbierenden', 'u'],
+  ['Welche Linien brauchst du für den Inkreis?', 'Winkelhalbierenden', 'Mittelsenkrechten', 'i'],
+  ['Was stimmt für den Umkreis?', 'Er geht durch alle drei Ecken.', 'Er berührt alle drei Seiten.', ''],
+  ['Was stimmt für den Inkreis?', 'Er berührt alle drei Seiten.', 'Er geht durch alle drei Ecken.', ''],
+  ['Der Mittelpunkt vom Umkreis ist gleich weit weg von …', 'allen drei Ecken', 'allen drei Seiten', ''],
+  ['Der Mittelpunkt vom Inkreis ist gleich weit weg von …', 'allen drei Seiten', 'allen drei Ecken', '']
+];
+function circChoice(G) {
+  const [q, r, w, fig] = queue(G, CQ), ps = acute(), [A, B, C] = ps, flip = rnd(0, 1);
+  return {
+    sig: q + r, type: 'choice', text: q, opts: flip ? [w, r] : [r, w], right: flip, off: [],
+    explain: 'Umkreis: Mittelsenkrechten, geht durch die Ecken. Inkreis: Winkelhalbierende, berührt die Seiten.',
+    draw() {
+      let s = '';
+      if (fig === 'u') { const U = ccenter(A, B, C); s += circ(U, dist(U, A), 'cc') + dot(U); }
+      if (fig === 'i') { const I = icenter(A, B, C); s += circ(I, dline(I, A, B), 'cc') + dot(I); }
+      return s + poly(ps);
+    }
+  };
+}
+
+// ---------- 5 SSS, SWS, WSW ----------
+function conChoice() {
+  let al, be; do { al = rnd(8, 16) * 5; be = rnd(8, 16) * 5; } while (180 - al - be < 40);
+  const ps = tri(al, be, [70, 50, 330, 250]), k = rnd(0, 2), i = rnd(0, 2), o = [(i + 1) % 3, (i + 2) % 3];
+  const hiA = k === 1 ? [i] : k === 2 ? o : [], hiS = k === 0 ? [0, 1, 2] : k === 1 ? o : [i];
+  return {
+    sig: k + ',' + i, type: 'choice', text: 'Die farbigen Stücke sind gegeben. Welcher Kongruenzsatz passt?', opts: ['SSS', 'SWS', 'WSW'], right: k, off: [],
+    explain: ['SSS: drei Seiten.', 'SWS: zwei Seiten und der Winkel dazwischen.', 'WSW: eine Seite und die beiden Winkel an ihr.'][k],
+    draw() {
+      const c = cen(ps); let s = '';
+      hiA.forEach(j => { s += inner(ps[j], ps[(j + 1) % 3], ps[(j + 2) % 3], 32, 'c2'); });
+      [0, 1, 2].forEach(j => { s += line(ps[(j + 1) % 3], ps[(j + 2) % 3], hiS.includes(j) ? 'hs' : 'fa'); });
+      ps.forEach((p, j) => { s += txt(out(p, c), 'ABC'[j]); });
+      return s;
+    }
+  };
+}
+function conGen() {
+  const kind = pick(['SSS', 'SWS', 'WSW']), A = P(70, 255); let a, b, c, al, be;
+  if (kind === 'SSS') { [c, b, a] = pick([[6, 4, 5], [7, 5, 4], [8, 5, 5], [6, 5, 5], [7, 6, 4], [8, 6, 4], [7, 4, 5], [6, 5, 4]]); al = deg(Math.acos((b * b + c * c - a * a) / (2 * b * c))); }
+  else if (kind === 'SWS') { c = rnd(5, 8); al = rnd(3, 7) * 10; b = rnd(3, 6); }
+  else { c = rnd(6, 8); do { al = rnd(3, 7) * 10; be = rnd(3, 7) * 10; } while (al + be > 120); b = c * Math.sin(rad(be)) / Math.sin(rad(180 - al - be)); }
+  const B = P(A.x + c * PX, A.y), C = polar(A, b * PX, al);
+  const given = kind === 'SSS' ? `c = ${c} cm, b = ${b} cm, a = ${a} cm` : kind === 'SWS' ? `c = ${c} cm, α = ${al}°, b = ${b} cm` : `c = ${c} cm, α = ${al}°, β = ${be}°`;
+  const base = line(A, B) + dot(A) + dot(B) + txt(P(A.x - 12, A.y + 16), 'A') + txt(P(B.x + 12, B.y + 16), 'B') + txt(P((A.x + B.x) / 2, A.y + 18), `c = ${c} cm`, 'ts');
+  return { kind, a, b, c, al, be, A, B, C, given, base };
+}
+function conSteps() {
+  const g = conGen(), { kind, a, b, c, al, be, A, B, C } = g;
+  const s0 = { t: `Zeichne die Seite c = ${c} cm. Die Enden sind A und B.`, req: [] };
+  const steps = kind === 'SSS' ? [s0, { t: `Zeichne einen Kreis um A mit Radius b = ${b} cm.`, req: [0] }, { t: `Zeichne einen Kreis um B mit Radius a = ${a} cm.`, req: [0] }, { t: 'Der Schnittpunkt der Kreise ist C. Verbinde C mit A und B.', req: [1, 2] }]
+    : kind === 'SWS' ? [s0, { t: `Trage in A den Winkel α = ${al}° an.`, req: [0] }, { t: `Miss auf dem neuen Schenkel b = ${b} cm ab. Dort liegt C.`, req: [1] }, { t: 'Verbinde C mit B.', req: [2] }]
+    : [s0, { t: `Trage in A den Winkel α = ${al}° an.`, req: [0] }, { t: `Trage in B den Winkel β = ${be}° an.`, req: [0] }, { t: 'Der Schnittpunkt der beiden Schenkel ist C.', req: [1, 2] }];
+  return {
+    sig: g.given, type: 'steps', steps, done: [], order: shuffle([0, 1, 2, 3]),
+    text: `Gegeben (${kind}): ${g.given}. Tippe die Schritte in der richtigen Reihenfolge an.`,
+    explain: 'So konstruierst du das Dreieck auch im Heft.',
+    draw(T) {
+      const has = i => T.done.includes(i), cl = P(C.x, C.y - 16); let s = '';
+      if (!T.done.length) return txt(P(200, 150), 'Dein Blatt ist noch leer.', 'ts');
+      if (kind === 'SSS') { if (has(1)) s += circ(A, b * PX, 'cs'); if (has(2)) s += circ(B, a * PX, 'cs'); if (has(3)) s += line(A, C) + line(B, C) + dot(C) + txt(cl, 'C'); }
+      if (kind === 'SWS') { if (has(1)) s += wedge(A, 0, al, 28, 'c1', al + '°') + line(A, polar(A, 290, al), 'fa'); if (has(2)) s += circ(A, b * PX, 'cs') + line(A, C) + dot(C) + txt(cl, 'C'); if (has(3)) s += line(B, C); }
+      if (kind === 'WSW') { if (has(1)) s += wedge(A, 0, al, 28, 'c1', al + '°') + line(A, polar(A, 290, al), 'fa'); if (has(2)) s += wedge(B, 180 - be, 180, 28, 'c2', be + '°') + line(B, polar(B, 290, 180 - be), 'fa'); if (has(3)) s += line(A, C) + line(B, C) + dot(C) + txt(cl, 'C'); }
+      return s + g.base;
+    }
+  };
+}
+function conDrag() {
+  const g = conGen(), { kind, a, b, c, al, be, A, B, C } = g;
+  let st = P(200, 110); if (dist(st, C) < 25) st = P(140, 150);
+  const hit = p => kind === 'SSS' ? mm(dist(A, p)) === b * 10 && mm(dist(B, p)) === a * 10
+    : kind === 'SWS' ? Math.round(angleAt(A, B, p)) === al && mm(dist(A, p)) === b * 10
+    : Math.round(angleAt(A, B, p)) === al && Math.round(angleAt(B, A, p)) === be;
+  return {
+    sig: g.given, type: 'drag', pts: { C: st },
+    text: `Gegeben (${kind}): ${g.given}. Zieh C an die richtige Stelle.`,
+    explain: 'Mit diesen drei Stücken gibt es nur genau dieses eine Dreieck.',
+    move(T, n, p) { p.y = Math.min(p.y, A.y - 10); T.pts.C = dist(p, C) < 8 ? P(C.x, C.y) : p; },
+    read(T) {
+      const p = T.pts.C, wa = Math.round(angleAt(A, B, p)), wb = Math.round(angleAt(B, A, p));
+      return kind === 'SSS' ? `b (A bis C): <b>${cm(dist(A, p))} cm</b> · a (B bis C): <b>${cm(dist(B, p))} cm</b>`
+        : kind === 'SWS' ? `α: <b>${wa}°</b> · b (A bis C): <b>${cm(dist(A, p))} cm</b>` : `α: <b>${wa}°</b> · β: <b>${wb}°</b>`;
+    },
+    check(T) { const p = T.pts.C; if (dist(p, C) < 8 || hit(p)) { T.pts.C = P(C.x, C.y); return { ok: true }; } return { msg: 'Die Maße passen noch nicht.' }; },
+    draw(T) {
+      const p = T.pts.C, k = T.ok ? 'ln' : 'da'; let s = '';
+      if (kind !== 'SSS') s += wedge(A, 0, dir(A, p), 28, 'c1') + txt(P(A.x - 34, A.y - 8), Math.round(angleAt(A, B, p)) + '°');
+      if (kind === 'WSW') s += inner(B, A, p, 28, 'c2') + txt(P(B.x + 34, B.y - 8), Math.round(angleAt(B, A, p)) + '°');
+      s += line(A, p, k) + line(B, p, k) + g.base;
+      return s + (T.ok ? dot(p) : handle(p)) + txt(P(p.x, p.y - 24), 'C');
+    }
+  };
+}
+
+// ---------- Konstruieren mit Zirkel und Lineal ----------
+// Objekte: {k:'c',m,r} Kreis, {k:'l',a,b} Gerade, {k:'s',a,b} gegebene Strecke.
+const pt = (p, n, lx, ly) => ({ x: p.x, y: p.y, n, lx, ly });
+function xLL(o1, o2) {
+  const r = isect(o1.a, P(o1.b.x - o1.a.x, o1.b.y - o1.a.y), o2.a, P(o2.b.x - o2.a.x, o2.b.y - o2.a.y));
+  if (!r) return [];
+  if (o1.k === 's' && (r.t < -0.001 || r.t > 1.001)) return [];
+  if (o2.k === 's' && (r.s < -0.001 || r.s > 1.001)) return [];
+  return [r.pt];
+}
+function xLC(l, c) {
+  if (dline(c.m, l.a, l.b) > c.r + 0.3) return [];
+  const dx = l.b.x - l.a.x, dy = l.b.y - l.a.y, fx = l.a.x - c.m.x, fy = l.a.y - c.m.y;
+  const A = dx * dx + dy * dy, B = 2 * (fx * dx + fy * dy), C = fx * fx + fy * fy - c.r * c.r, D = Math.sqrt(Math.max(0, B * B - 4 * A * C));
+  return [(-B - D) / (2 * A), (-B + D) / (2 * A)].filter(t => l.k !== 's' || (t > -0.001 && t < 1.001)).map(t => P(l.a.x + t * dx, l.a.y + t * dy));
+}
+function xCC(c1, c2) {
+  const d = dist(c1.m, c2.m);
+  if (d < 1e-6 || d > c1.r + c2.r + 0.3 || d < Math.abs(c1.r - c2.r) - 0.3) return [];
+  const a = (c1.r * c1.r - c2.r * c2.r + d * d) / (2 * d), h = Math.sqrt(Math.max(0, c1.r * c1.r - a * a));
+  const ux = (c2.m.x - c1.m.x) / d, uy = (c2.m.y - c1.m.y) / d, px = c1.m.x + a * ux, py = c1.m.y + a * uy;
+  return [P(px + h * uy, py - h * ux), P(px - h * uy, py + h * ux)];
+}
+function cpts(T) {
+  const res = T.base.slice(), all = T.given.concat(T.objs);
+  const add = p => { if (p.x < 4 || p.x > 396 || p.y < 4 || p.y > 296) return; if (!res.some(q => dist(p, q) < 2.5)) res.push(p); };
+  for (let i = 0; i < all.length; i++) for (let j = i + 1; j < all.length; j++) {
+    const a = all[i], b = all[j];
+    if (a.k === 'c' && b.k === 'c') xCC(a, b).forEach(add);
+    else if (a.k === 'c' || b.k === 'c') xLC(a.k === 'c' ? b : a, a.k === 'c' ? a : b).forEach(add);
+    else if (a.k !== 's' || b.k !== 's') xLL(a, b).forEach(add);
+  }
+  return res;
+}
+const xline = (o, c) => { const l = dist(o.a, o.b), ux = (o.b.x - o.a.x) / l, uy = (o.b.y - o.a.y) / l; return line(P(o.a.x - 600 * ux, o.a.y - 600 * uy), P(o.a.x + 600 * ux, o.a.y + 600 * uy), c); };
+function conDraw(T) {
+  const g = T.ok ? T.goal(T) : null; let s = '';
+  T.objs.forEach(o => { if (o !== g) s += o.k === 'c' ? circ(o.m, o.r, 'fa') : xline(o, 'fa'); });
+  T.given.forEach(o => { s += line(o.a, o.b); });
+  if (g) s += g.k === 'c' ? circ(g.m, g.r, 'cc') : xline(g, 'hi');
+  if (T.pre) s += T.pre.k === 'c' ? circ(T.pre.m, T.pre.r, 'cc') : line(T.pre.a, T.pre.b, 'cc');
+  if (T.sel && !T.ok) s += handle(T.sel);
+  cpts(T).forEach(q => { s += q.n ? dot(q) + txt(P(q.x + q.lx, q.y + q.ly), q.n) : `<circle class="ip" cx="${f(q.x)}" cy="${f(q.y)}" r="3.5"/>`; });
+  return s;
+}
+function conMove(T, p) {
+  const c0 = T.from; T.last = p;
+  if (T.tool === 'c') {
+    const r = dist(c0, p), cand = []; let best = 8, rr = r;
+    cpts(T).forEach(q => cand.push(dist(c0, q)));
+    T.objs.forEach(o => { if (o.k === 'c') cand.push(o.r); });
+    T.given.forEach(g => { const ft = foot(c0, g.a, g.b), l = dist(g.a, g.b), t = ((ft.x - g.a.x) * (g.b.x - g.a.x) + (ft.y - g.a.y) * (g.b.y - g.a.y)) / (l * l); if (t > 0 && t < 1) cand.push(dist(c0, ft)); });
+    cand.forEach(c => { if (c > 12 && Math.abs(c - r) < best) { best = Math.abs(c - r); rr = c; } });
+    T.pre = { k: 'c', m: c0, r: rr };
+  } else {
+    let bd = 24, hit = null;
+    cpts(T).forEach(q => { const d = dist(p, q); if (d < bd && dist(q, c0) > 15) { bd = d; hit = q; } });
+    T.pre = { k: 'l', a: c0, b: hit ? P(hit.x, hit.y) : p, ok: !!hit };
+  }
+}
+// Ziehen von Punkt zu Punkt oder zwei Punkte nacheinander anklicken, beides geht.
+function conDrop(T) {
+  let o = T.pre; const c0 = T.from, moved = T.last && dist(T.last, T.down) > 10;
+  T.pre = null; T.from = null; T.last = null;
+  if (o && (o.k === 'c' ? o.r > 12 : o.ok)) T.sel = null;
+  else {
+    o = null;
+    if (moved) T.sel = null;
+    else if (T.sel && dist(T.sel, c0) > 15) { o = T.tool === 'c' ? { k: 'c', m: T.sel, r: dist(T.sel, c0) } : { k: 'l', a: T.sel, b: c0 }; T.sel = null; }
+    else T.sel = c0;
+  }
+  if (o) { T.objs.push(o); if (T.goal(T)) return win(); }
+  render();
+}
+const conBase = T => Object.assign({
+  type: 'con', objs: [], tool: 'c', pre: null, from: null, draw: conDraw,
+  explain: 'Genau so geht es auch mit Zirkel und Lineal im Heft.',
+  read(T) {
+    if (T.ok) return '';
+    if (T.pre && T.pre.k === 'c') return `Radius: <b>${cm(T.pre.r)} cm</b>`;
+    return T.tool === 'c' ? 'Zirkel: auf den Mittelpunkt drücken und ziehen. Oder erst den Mittelpunkt antippen, dann einen Punkt auf dem Kreis.' : 'Lineal: zwei Punkte nacheinander antippen oder von einem zum anderen ziehen.';
+  }
+}, T);
+function msCon() {
+  const th = rnd(-20, 20), h = rnd(55, 75), M = P(200, 150), A = polar(M, h, 180 + th), B = polar(M, h, th), u = P((B.x - A.x) / (2 * h), (B.y - A.y) / (2 * h));
+  return conBase({
+    sig: 'm' + th + ',' + h, text: 'Konstruiere die Mittelsenkrechte von AB.',
+    tip: 'Kreis um A, größer als die halbe Strecke. Kreis um B mit dem gleichen Radius. Dann mit dem Lineal durch die beiden Schnittpunkte.',
+    given: [{ k: 's', a: A, b: B }], base: [pt(A, 'A', -8, 16), pt(B, 'B', 8, 16)],
+    goal(T) { return T.objs.find(o => o.k === 'l' && dline(M, o.a, o.b) < 2.5 && Math.abs(((o.b.x - o.a.x) * u.x + (o.b.y - o.a.y) * u.y) / dist(o.a, o.b)) < 0.03); }
+  });
+}
+function whCon() {
+  const w = rnd(20, 38) * 2, S = P(60, 245), b = P(Math.cos(rad(w / 2)), -Math.sin(rad(w / 2)));
+  return conBase({
+    sig: 'w' + w, text: 'Konstruiere die Winkelhalbierende des Winkels bei S.',
+    tip: 'Kreis um S, er schneidet beide Schenkel. Um diese zwei Schnittpunkte je einen Kreis mit gleichem Radius. Dann mit dem Lineal von S durch deren Schnittpunkt.',
+    given: [{ k: 's', a: S, b: polar(S, 330, 0) }, { k: 's', a: S, b: polar(S, 330, w) }], base: [pt(S, 'S', -12, 12)],
+    goal(T) { return T.objs.find(o => o.k === 'l' && dline(S, o.a, o.b) < 2.5 && Math.abs(((o.b.x - o.a.x) * b.y - (o.b.y - o.a.y) * b.x) / dist(o.a, o.b)) < 0.03); }
+  });
+}
+function triCon(kind) {
+  let al, be; do { al = rnd(50, 75); be = rnd(50, 75); } while (180 - al - be < 45);
+  const ps = tri(al, be, [120, 105, 280, 215]), [A, B, C] = ps, c = cen(ps);
+  const Z = kind === 'u' ? ccenter(A, B, C) : icenter(A, B, C), R = kind === 'u' ? dist(Z, A) : dline(Z, A, B);
+  return conBase({
+    sig: kind + ps.map(q => Math.round(q.x) + ',' + Math.round(q.y)).join(),
+    text: kind === 'u' ? 'Konstruiere den Umkreis des Dreiecks.' : 'Konstruiere den Inkreis des Dreiecks.',
+    tip: kind === 'u' ? 'Konstruiere zwei Mittelsenkrechten. Ihr Schnittpunkt ist der Mittelpunkt. Zieh den Kreis von dort bis zu einer Ecke.'
+      : 'Konstruiere zwei Winkelhalbierende. Ihr Schnittpunkt ist der Mittelpunkt. Zieh den Kreis von dort, bis er eine Seite gerade berührt. Nicht bis zur Ecke!',
+    given: [{ k: 's', a: A, b: B }, { k: 's', a: B, b: C }, { k: 's', a: C, b: A }],
+    base: ps.map((q, j) => { const o = out(q, c, 14); return pt(q, 'ABC'[j], o.x - q.x, o.y - q.y); }),
+    goal(T) { return T.objs.find(o => o.k === 'c' && dist(o.m, Z) < 3 && Math.abs(o.r - R) < 3); }
+  });
+}
+
+// ---------- Themen ----------
+const TOPICS = [
+  { name: 'Winkel an Kreuzungen', levels: [
+    { name: 'Gerade drehen', need: 3, gen: crossDrag },
+    { name: 'Ein Winkel fehlt', need: 5, gen: () => crossNum(false) },
+    { name: 'Drei Winkel fehlen', need: 4, gen: () => crossNum(true) }] },
+  { name: 'Winkelsumme im Dreieck und Viereck', levels: [
+    { name: 'Dreieck', need: 5, gen: triNum },
+    { name: 'Viereck', need: 5, gen: quadNum },
+    { name: 'Dreieck mit Nebenwinkel', need: 4, gen: triExt }] },
+  { name: 'Mittelsenkrechte und Winkelhalbierende', levels: [
+    { name: 'Gleich weit von A und B', need: 2, gen: msDrag },
+    { name: 'Gleich weit von beiden Schenkeln', need: 2, gen: whDrag },
+    { name: 'Rechnen', need: 5, gen: midNum },
+    { name: 'Konstruieren', need: 2, gen: G => queue(G, [msCon, whCon])() }] },
+  { name: 'Inkreis und Umkreis', levels: [
+    { name: 'Umkreis finden', need: 3, gen: umDrag },
+    { name: 'Inkreis finden', need: 3, gen: inDrag },
+    { name: 'Was gehört wozu?', need: 6, gen: circChoice },
+    { name: 'Konstruieren', need: 2, gen: G => queue(G, [() => triCon('u'), () => triCon('i')])() }] },
+  { name: 'Dreiecke konstruieren (SSS, SWS, WSW)', levels: [
+    { name: 'Welcher Satz passt?', need: 6, gen: conChoice },
+    { name: 'Schritte ordnen', need: 3, gen: conSteps },
+    { name: 'Punkt C finden', need: 4, gen: conDrag }] }
+];
+
+// ---------- Spiel ----------
+let S = {}, G = null;
+// Schon gestellte Aufgaben je Level, damit sich nichts wiederholt.
+const SEEN = {};
+try { S = JSON.parse(localStorage.getItem('geo-sterne') || '{}') || {}; } catch (e) { S = {}; }
+const save = () => { try { localStorage.setItem('geo-sterne', JSON.stringify(S)); } catch (e) {} };
+const stars = n => '★'.repeat(n) + '☆'.repeat(3 - n);
+const say = (m, c) => { G.msg = m; G.mc = c; };
+
+function home() {
+  G = null; $('game').hidden = true; $('fin').hidden = true; $('home').hidden = false; $('back').hidden = true;
+  $('home').innerHTML = TOPICS.map((tp, t) => `<section class="card"><h2>${t + 1}. ${tp.name}</h2>` + tp.levels.map((lv, l) =>
+    `<button class="lv" data-t="${t}" data-l="${l}"><span>Level ${l + 1}<small>${lv.name}</small></span><span class="st">${stars(S[t + '.' + l] || 0)}</span></button>`).join('') + '</section>').join('');
+  total();
+}
+function total() {
+  let sum = 0; for (const k in S) sum += S[k] || 0;
+  $('total').textContent = `★ ${sum}/${TOPICS.reduce((n, tp) => n + tp.levels.length * 3, 0)}`;
+}
+function start(t, l) {
+  G = { t, l, solved: 0, mistakes: 0, af: 0, msg: '', mc: '', run: [] };
+  $('home').hidden = true; $('fin').hidden = true; $('game').hidden = false; $('back').hidden = false;
+  next();
+}
+function next() {
+  const L = TOPICS[G.t].levels[G.l];
+  if (G.solved >= L.need) return finish();
+  const k = G.t + '.' + G.l; let seen = SEEN[k] || (SEEN[k] = new Set()), T, n = 0;
+  do T = L.gen(G); while (seen.has(T.sig) && ++n < 200);
+  if (seen.has(T.sig)) { seen = SEEN[k] = new Set(G.run); n = 0; do T = L.gen(G); while (seen.has(T.sig) && ++n < 200); }
+  seen.add(T.sig); G.run.push(T.sig);
+  G.T = T; G.af = 0; say('', ''); render(); window.scrollTo(0, 0);
+}
+function redraw() {
+  const T = G.T;
+  $('fig').innerHTML = T.draw(T);
+  $('read').innerHTML = T.read ? T.read(T) : '';
+}
+function render() {
+  const T = G.T, tp = TOPICS[G.t], L = tp.levels[G.l];
+  $('lvl').textContent = `${tp.name} · Level ${G.l + 1}`;
+  $('dots').innerHTML = Array.from({ length: L.need }, (_, i) => `<i class="${i < G.solved ? 'on' : ''}"></i>`).join('');
+  $('text').innerHTML = T.text;
+  redraw();
+  let h = '';
+  if (T.type === 'num') {
+    h += '<div class="chips">' + T.fields.map((x, i) => `<button class="chip${i === G.af && !T.ok ? ' act' : ''}${x.bad ? ' bad' : ''}" data-f="${i}">${x.name} = <b>${x.val || '?'}</b> ${x.unit}</button>`).join('') + '</div>';
+    if (!T.ok) h += '<div class="pad">' + [1, 2, 3, 4, 5, 6, 7, 8, 9].map(d => `<button data-d="${d}">${d}</button>`).join('') + '<button data-d="x">⌫</button><button data-d="0">0</button><button class="go" data-go="1">Prüfen</button></div>';
+  } else if (T.type === 'choice') {
+    h += T.opts.map((o, i) => `<button class="opt${T.off[i] ? ' off' : ''}${T.ok && i === T.right ? ' yes' : ''}" data-o="${i}"${T.off[i] || T.ok ? ' disabled' : ''}>${o}</button>`).join('');
+  } else if (T.type === 'steps') {
+    h += T.order.map(i => { const d = T.done.includes(i); return `<button class="opt${d ? ' yes' : ''}" data-s="${i}"${d ? ' disabled' : ''}>${d ? (T.done.indexOf(i) + 1) + '. ' : ''}${T.steps[i].t}</button>`; }).join('');
+  } else if (T.type === 'con') {
+    if (!T.ok) h += `<div class="tools"><button data-tool="c"${T.tool === 'c' ? ' class="act"' : ''}>Zirkel</button><button data-tool="l"${T.tool === 'l' ? ' class="act"' : ''}>Lineal</button><button data-undo="1">Zurück</button><button data-tip="1">Tipp</button></div>`;
+  } else if (!T.ok) h += `<button class="go wide" data-go="1">${T.btn || 'Prüfen'}</button>`;
+  $('ctl').innerHTML = h;
+  $('msg').textContent = G.msg; $('msg').className = 'msg ' + G.mc;
+  $('next').hidden = !T.ok;
+}
+function win() { const T = G.T; T.ok = true; G.solved++; say('Richtig! ' + (T.explain || ''), 'good'); render(); }
+function miss(m) { G.mistakes++; say(m, 'bad'); render(); }
+function go() {
+  const T = G.T; if (T.ok) return;
+  if (T.type === 'num') {
+    if (T.fields.some(x => !x.val)) { say('Trag erst alle Werte ein.', ''); return render(); }
+    let all = true; T.fields.forEach(x => { x.bad = parseInt(x.val, 10) !== x.ans; if (x.bad) all = false; });
+    return all ? win() : miss('Das stimmt noch nicht. ' + (T.tip || ''));
+  }
+  const r = T.check(T);
+  if (r.ok) return win();
+  if (r.more) { say(r.msg, 'good'); return render(); }
+  miss(r.msg);
+}
+function key(d) {
+  const T = G.T; if (T.ok || T.type !== 'num') return;
+  const x = T.fields[G.af]; x.bad = false;
+  if (d === 'x') x.val = x.val.slice(0, -1); else if (x.val.length < 3) x.val = (x.val === '0' ? '' : x.val) + d;
+  render();
+}
+function finish() {
+  const n = G.mistakes === 0 ? 3 : G.mistakes <= 2 ? 2 : 1, k = G.t + '.' + G.l;
+  if (n > (S[k] || 0)) { S[k] = n; save(); }
+  total();
+  $('fst').textContent = stars(n);
+  $('ftx').textContent = ['', 'Geschafft! Für mehr Sterne brauchst du weniger Fehler.', 'Stark, fast ohne Fehler!', 'Perfekt, kein einziger Fehler!'][n];
+  $('fnext').hidden = G.l >= TOPICS[G.t].levels.length - 1;
+  $('fin').hidden = false;
+}
+
+$('home').addEventListener('click', e => { const b = e.target.closest('.lv'); if (b) start(+b.dataset.t, +b.dataset.l); });
+$('back').addEventListener('click', home);
+$('next').addEventListener('click', next);
+$('fnext').addEventListener('click', () => start(G.t, G.l + 1));
+$('fagain').addEventListener('click', () => start(G.t, G.l));
+$('fhome').addEventListener('click', home);
+$('ctl').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b || !G) return; const T = G.T, d = b.dataset;
+  if (d.go) return go();
+  if (d.tool) { T.tool = d.tool; T.sel = null; return render(); }
+  if (d.undo) { T.objs.pop(); T.sel = null; say('', ''); return render(); }
+  if (d.tip) { if (!T.tipped) { T.tipped = true; G.mistakes++; } say(T.tip, ''); return render(); }
+  if (d.d !== undefined) return key(d.d);
+  if (d.f !== undefined) { G.af = +d.f; return render(); }
+  if (d.o !== undefined && !T.ok) { const i = +d.o; if (i === T.right) return win(); T.off[i] = true; return miss('Das passt nicht. Schau noch einmal genau hin.'); }
+  if (d.s !== undefined && !T.ok) {
+    const i = +d.s;
+    if (!T.steps[i].req.every(q => T.done.includes(q))) return miss('Das geht noch nicht. Was brauchst du vorher?');
+    T.done.push(i); if (T.done.length === T.steps.length) return win();
+    say('', ''); render();
+  }
+});
+document.addEventListener('keydown', e => {
+  if (!G || !G.T || !$('fin').hidden) return;
+  if (e.key === 'Enter') { e.preventDefault(); return G.T.ok ? next() : G.T.type === 'con' ? 0 : go(); }
+  if (/^[0-9]$/.test(e.key)) key(e.key); else if (e.key === 'Backspace') key('x');
+});
+const fig = $('fig'); let dragN = null;
+const sp = e => { const r = fig.getBoundingClientRect(); return P(Math.max(8, Math.min(392, (e.clientX - r.left) / r.width * 400)), Math.max(8, Math.min(292, (e.clientY - r.top) / r.height * 300))); };
+fig.addEventListener('pointerdown', e => {
+  const T = G && G.T; if (!T || T.ok) return;
+  const p = sp(e); let bd = 60; dragN = null;
+  if (T.type === 'con') {
+    let hd = 30, hit = null; cpts(T).forEach(q => { const d = dist(p, q); if (d < hd) { hd = d; hit = q; } });
+    if (hit) { T.from = P(hit.x, hit.y); T.down = p; T.last = null; try { fig.setPointerCapture(e.pointerId); } catch (x) {} e.preventDefault(); }
+    else if (T.sel) { T.sel = null; redraw(); }
+    return;
+  }
+  if (T.type !== 'drag') return;
+  for (const k in T.pts) { const d = dist(p, T.pts[k]); if (d < bd) { bd = d; dragN = k; } }
+  if (dragN) { try { fig.setPointerCapture(e.pointerId); } catch (x) {} e.preventDefault(); }
+});
+fig.addEventListener('pointermove', e => {
+  if (G && G.T && G.T.type === 'con') { if (G.T.from && !G.T.ok) { conMove(G.T, sp(e)); redraw(); } return; }
+  if (!dragN || !G || G.T.ok) return; G.T.move(G.T, dragN, sp(e)); redraw(); });
+const drop = () => { dragN = null; if (G && G.T && G.T.type === 'con' && G.T.from) conDrop(G.T); };
+fig.addEventListener('pointerup', drop); fig.addEventListener('pointercancel', drop);
+home();
+</script>
+</body>
+</html>
