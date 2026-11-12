@@ -543,7 +543,7 @@ function triCon(kind) {
 
 // ---------- Begründen: Winkel aus Beziehungen ----------
 // Eine Figur hat Ecken mit Strahlen. Ein Winkel liegt an einer Ecke, gegen den Uhrzeigersinn von Strahl a1 bis a2.
-// Ein Schritt: gesuchten Winkel antippen, Begriffskarte wählen, bekannten Winkel antippen, Größe eintragen.
+// Ein Schritt: gesuchten Winkel antippen, Begriffskarte wählen, Größe eintragen.
 const CARDS = { ne: 'Nebenwinkel', sc: 'Scheitelwinkel', st: 'Stufenwinkel', we: 'Wechselwinkel', su: 'Winkelsumme' };
 const nrm = a => ((a % 360) + 360) % 360;
 const same = (a, b) => { const d = Math.abs(nrm(a) - nrm(b)); return Math.min(d, 360 - d) < 0.6; };
@@ -562,9 +562,10 @@ function rels(F, s, t) {
   return r;
 }
 const polyOf = (F, t) => F.polys.find(pl => pl.includes(t));
-// Prüft die Behauptung. Ist sie falsch, zeigt die Figur rot, wo der Winkel wirklich landet.
+// Prüft die Behauptung „t ist ein solcher Winkel zu einem bekannten Winkel“. Den bekannten Partner sucht das Spiel selbst.
+// Stimmt sie nicht, zeigt die Figur rot, wo die Partner dieser Art wirklich liegen.
 function claim(T) {
-  const F = T.F, { t, c, s } = T.sel, B = F.A[t];
+  const F = T.F, { t, c } = T.sel, B = F.A[t];
   T.ghost = [];
   if (c === 'su') {
     const pl = polyOf(F, t);
@@ -573,24 +574,13 @@ function claim(T) {
     if (mi.length) { T.ghost = mi.map(i => F.A[i]); return { msg: `Dafür musst du erst ${mi.map(i => F.A[i].name).join(' und ')} kennen.` }; }
     return { ok: true };
   }
-  const A = F.A[s];
-  if (rels(F, s, t).includes(c)) return { ok: true };
-  if (c === 'ne') {
-    const nb = F.A.map((x, i) => i).filter(i => i !== s && rels(F, s, i).includes('ne'));
-    T.ghost = nb.map(i => F.A[i]);
-    return { msg: nb.length ? `Die Nebenwinkel von ${A.name} sind rot markiert. Nebenwinkel liegen nebeneinander an einer Geraden.` : `${A.name} hat hier keinen Nebenwinkel.` };
-  }
-  if (c === 'sc') {
-    T.ghost = [{ v: A.v, a1: A.a1 + 180, a2: A.a2 + 180 }];
-    return { msg: A.v !== B.v ? `Scheitelwinkel liegen an derselben Kreuzung. Gegenüber von ${A.name} liegt der rote Winkel.` : `Gegenüber von ${A.name} liegt der rote Winkel, nicht ${B.name}.` };
-  }
-  if (A.v === B.v) return { msg: `${CARDS[c]} liegen an zwei verschiedenen Kreuzungen.` };
-  if (!onLine(F, A, B)) return { msg: `${A.name} und ${B.name} liegen nicht an derselben Geraden.` };
-  const k = c === 'we' ? 180 : 0, g = { v: B.v, a1: A.a1 + k, a2: A.a2 + k };
-  T.ghost = [g];
-  if (!F.rays[B.v].some(x => same(x, g.a1)) || !F.rays[B.v].some(x => same(x, g.a2)))
-    return { msg: `Verschoben passt ${A.name} nicht in die andere Kreuzung. Die Geraden sind nicht parallel.` };
-  return { msg: c === 'st' ? `Verschoben landet ${A.name} auf dem roten Winkel, nicht auf ${B.name}.` : `Verschoben und gedreht landet ${A.name} auf dem roten Winkel, nicht auf ${B.name}.` };
+  const partner = F.A.map((x, i) => i).filter(i => i !== t && rels(F, i, t).includes(c));
+  const known = partner.find(i => F.A[i].known);
+  if (known !== undefined) { T.sel.s = known; return { ok: true }; }
+  T.ghost = partner.map(i => F.A[i]);
+  const art = { ne: 'Die Nebenwinkel', sc: 'Der Scheitelwinkel', st: 'Der Stufenwinkel', we: 'Der Wechselwinkel' }[c];
+  if (!partner.length) return { msg: `${B.name} hat hier keinen ${CARDS[c]}.` };
+  return { msg: `${art} von ${B.name} ${partner.length > 1 ? 'sind' : 'ist'} rot markiert. ${partner.length > 1 ? 'Die kennst' : 'Den kennst'} du noch nicht.` };
 }
 function expect(T) {
   const F = T.F, { t, c, s } = T.sel;
@@ -661,17 +651,12 @@ function hitAngle(T, p) {
 function proofTap(T, p) {
   const i = hitAngle(T, p); if (i === null) return;
   const A = T.F.A[i];
-  if (T.ph === 's') {
-    if (i === T.sel.t) return;
-    if (!A.known) { say(`${A.name} kennst du noch nicht. Tippe einen bekannten Winkel an.`, 'bad'); return render(); }
-    T.sel.s = i; return proofCheck(T);
-  }
   if (A.known) { say(`${A.name} kennst du schon. Tippe einen Winkel an, den du ausrechnen willst.`, ''); return render(); }
   T.sel = { t: i }; T.ph = 'c'; T.ghost = []; T.val = ''; say('', ''); render();
 }
 function proofCheck(T) {
   const r = claim(T);
-  if (!r.ok) { T.ph = 'c'; delete T.sel.s; return miss(r.msg); }
+  if (!r.ok) { T.ph = 'c'; return miss(r.msg); }
   T.ghost = []; T.ph = 'v'; T.val = '';
   say(`Richtig, ${CARDS[T.sel.c]}. Wie groß ist ${T.F.A[T.sel.t].name}?`, 'good'); render();
 }
@@ -843,7 +828,6 @@ function render() {
       const tn = T.sel ? T.F.A[T.sel.t].name : '';
       if (T.ph === 't') h += '<p class="pr">Tippe einen Winkel an, den du ausrechnen willst.</p>';
       if (T.ph === 'c') h += `<p class="pr">Wie hängt ${tn} mit einem bekannten Winkel zusammen?</p><div class="cards">` + T.cards.map(c => `<button data-card="${c}">${CARDS[c]}</button>`).join('') + '</div>';
-      if (T.ph === 's') h += `<p class="pr">${CARDS[T.sel.c]}: Tippe den bekannten Winkel an.</p><div class="cards"><button data-back="1">Andere Karte</button></div>`;
       if (T.ph === 'v') h += `<div class="chips"><span class="chip act">${tn} = <b>${T.val || '?'}</b>°</span></div><div class="pad">` + [1, 2, 3, 4, 5, 6, 7, 8, 9].map(d => `<button data-d="${d}">${d}</button>`).join('') + '<button data-d="x">⌫</button><button data-d="0">0</button><button class="go" data-go="1">Prüfen</button></div>';
       h += '<div class="cards"><button data-tip="1">Tipp</button></div>';
     }
@@ -899,8 +883,7 @@ $('ctl').addEventListener('click', e => {
   if (d.tool) { T.tool = d.tool; T.sel = null; return render(); }
   if (d.undo) { T.objs.pop(); T.sel = null; say('', ''); return render(); }
   if (d.tip) { if (!T.tipped) { T.tipped = true; G.mistakes++; } say(typeof T.tip === 'function' ? T.tip(T) : T.tip, ''); return render(); }
-  if (d.card) { T.sel.c = d.card; if (d.card === 'su') return proofCheck(T); T.ph = 's'; say('', ''); return render(); }
-  if (d.back) { T.ph = 'c'; delete T.sel.c; say('', ''); return render(); }
+  if (d.card) { T.sel = { t: T.sel.t, c: d.card }; return proofCheck(T); }
   if (d.d !== undefined) return key(d.d);
   if (d.f !== undefined) { G.af = +d.f; return render(); }
   if (d.o !== undefined && !T.ok) { const i = +d.o; if (i === T.right) return win(); T.off[i] = true; return miss('Das passt nicht. Schau noch einmal genau hin.'); }
