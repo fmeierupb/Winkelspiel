@@ -1,5 +1,5 @@
 // Eigener Cache-Präfix, damit andere Werkzeuge unter derselben Adresse unberührt bleiben.
-const CACHE = 'winkel-61fc20ea';
+const CACHE = 'winkel-a95de333';
 // Alles, was beim ersten Aufruf in den Speicher kommt.
 const FILES = [
   './',
@@ -10,8 +10,9 @@ const FILES = [
   './manifest.webmanifest'
 ];
 
+// 'reload' umgeht den Browser-Zwischenspeicher, damit wirklich die neue Fassung im Speicher landet.
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES.map(f => new Request(f, { cache: 'reload' })))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', e => {
@@ -28,7 +29,7 @@ self.addEventListener('fetch', e => {
   if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
   e.respondWith((async () => {
     const cache = await caches.open(CACHE);
-    const net = fetch(req).then(res => {
+    const net = fetch(req, { cache: 'no-cache' }).then(res => {
       if (res.ok && !new URL(req.url).search) cache.put(req, res.clone());
       return res;
     });

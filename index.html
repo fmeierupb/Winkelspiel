@@ -80,11 +80,16 @@ svg .sel{fill:none;stroke:var(--c1);stroke-width:3}
 .cards button{font-size:17px;padding:12px 8px}
 .hl{display:flex;justify-content:space-between;gap:10px;font-weight:600;font-size:17px;padding:2px 0}
 .hl small{color:var(--mut);font-weight:500;font-size:14px;text-align:right}
+.fassung{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:24px;font-size:13px;color:var(--mut)}
+.fassung button{font-size:14px;color:var(--fg);border-radius:10px;padding:6px 12px}
+.fassung button:disabled{opacity:.5}
+#home[hidden]+.fassung{display:none}
 </style>
 </head>
 <body>
 <header><button id="back" hidden aria-label="Zurück">‹</button><h1>Winkel und Dreiecke</h1><span id="total"></span></header>
 <main id="home"></main>
+<div class="fassung"><span>Fassung <span id="stand">13.11.2026 09:43</span></span><button id="aktualisieren" type="button">Neueste Fassung laden</button><span id="fassung-status"></span></div>
 <main id="game" hidden>
   <div id="lvl"></div>
   <div id="dots"></div>
@@ -935,6 +940,31 @@ fig.addEventListener('pointermove', e => {
 const drop = () => { dragN = null; if (G && G.T && G.T.type === 'con' && G.T.from) conDrop(G.T); };
 fig.addEventListener('pointerup', drop); fig.addEventListener('pointercancel', drop);
 home();
+// Neueste Fassung laden: Service Worker prüfen, neue Fassung vollständig in den Speicher holen, dann neu laden.
+(() => {
+  const STAND = $('stand').textContent.trim(), st = $('fassung-status');
+  $('aktualisieren').addEventListener('click', async () => {
+    if (!navigator.onLine) { st.textContent = 'Kein Netz. Es bleibt bei dieser Fassung.'; return; }
+    st.textContent = 'Lade …'; $('aktualisieren').disabled = true;
+    try { sessionStorage.setItem('winkel-vorher', STAND); } catch (e) {}
+    try {
+      const reg = 'serviceWorker' in navigator && await navigator.serviceWorker.getRegistration();
+      if (reg) {
+        await reg.update();
+        const w = reg.installing || reg.waiting;
+        if (w) await new Promise(ok => {
+          const t = setTimeout(ok, 30000);
+          w.addEventListener('statechange', () => { if (w.state === 'activated' || w.state === 'redundant') { clearTimeout(t); ok(); } });
+        });
+      }
+    } catch (e) {}
+    location.reload();
+  });
+  try {
+    const vorher = sessionStorage.getItem('winkel-vorher');
+    if (vorher) { sessionStorage.removeItem('winkel-vorher'); st.textContent = vorher === STAND ? 'Keine neuere Fassung gefunden.' : 'Neue Fassung geladen.'; }
+  } catch (e) {}
+})();
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) navigator.serviceWorker.register('sw.js').catch(() => {});
 </script>
 </body>
