@@ -1,6 +1,14 @@
 // Eigener Cache-Präfix, damit andere Werkzeuge unter derselben Adresse unberührt bleiben.
-const CACHE = 'winkel-v3';
-const FILES = ['./', './index.html', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png'];
+const CACHE = 'winkel-61fc20ea';
+// Alles, was beim ersten Aufruf in den Speicher kommt.
+const FILES = [
+  './',
+  './icon-180.png',
+  './icon-192.png',
+  './icon-512.png',
+  './index.html',
+  './manifest.webmanifest'
+];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
@@ -21,7 +29,7 @@ self.addEventListener('fetch', e => {
   e.respondWith((async () => {
     const cache = await caches.open(CACHE);
     const net = fetch(req).then(res => {
-      if (res.ok) cache.put(req, res.clone());
+      if (res.ok && !new URL(req.url).search) cache.put(req, res.clone());
       return res;
     });
     net.catch(() => {});

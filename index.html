@@ -935,7 +935,7 @@ fig.addEventListener('pointermove', e => {
 const drop = () => { dragN = null; if (G && G.T && G.T.type === 'con' && G.T.from) conDrop(G.T); };
 fig.addEventListener('pointerup', drop); fig.addEventListener('pointercancel', drop);
 home();
-if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) navigator.serviceWorker.register('sw.js').catch(() => {});
 </script>
 </body>
 </html>
