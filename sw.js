@@ -1,5 +1,5 @@
 // Eigener Cache-Präfix, damit andere Werkzeuge unter derselben Adresse unberührt bleiben.
-const CACHE = 'winkel-196af947';
+const CACHE = 'winkel-1c39352c';
 // Alles, was beim ersten Aufruf in den Speicher kommt.
 const FILES = [
   './',

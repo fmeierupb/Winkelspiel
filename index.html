@@ -89,7 +89,7 @@ svg .sel{fill:none;stroke:var(--c1);stroke-width:3}
 <body>
 <header><button id="back" hidden aria-label="Zurück">‹</button><h1>Winkel und Dreiecke</h1><span id="total"></span></header>
 <main id="home"></main>
-<div class="fassung"><span>Fassung <span id="stand">13.11.2026 10:20</span></span><button id="aktualisieren" type="button">Neueste Fassung laden</button><span id="fassung-status"></span></div>
+<div class="fassung"><span>Fassung <span id="stand">13.11.2026 10:30</span></span><button id="aktualisieren" type="button">Neueste Fassung laden</button><span id="fassung-status"></span></div>
 <main id="game" hidden>
   <div id="lvl"></div>
   <div id="dots"></div>
@@ -711,7 +711,7 @@ function knQ() {
 function parFigure(a, tl = 0) {
   const F0 = P(200, 152), onF = y => P(F0.x + (F0.y - y) / Math.tan(rad(a)), y), G0 = onF(92), H0 = onF(212);
   const nm = ['α', 'β', 'γ', 'δ'], A = [];
-  [0, tl].forEach((u, k) => [[u, a], [a, u + 180], [u + 180, a + 180], [a + 180, u + 360]].forEach((x, i) => A.push(ang(k, x[0], x[1], nm[i] + (k ? '₁' : ''), Math.round(i % 2 ? 180 - (a - u) : a - u)))));
+  [0, tl].forEach((u, k) => [[u, a], [a, u + 180], [u + 180, a + 180], [a + 180, u + 360]].forEach((x, i) => A.push(ang(k, x[0], x[1], nm[i] + (k ? '₂' : '₁'), Math.round(i % 2 ? 180 - (a - u) : a - u)))));
   const hy = polar(H0, (390 - H0.x) / Math.cos(rad(tl)), tl).y;
   const lines = line(polar(G0, 300, 0), polar(G0, 300, 180)) + line(polar(H0, 300, tl), polar(H0, 300, tl + 180)) + line(polar(F0, 220, a), polar(F0, 220, a + 180))
     + txt(P(390, G0.y - 11), 'g', 'ts') + txt(P(390, hy - 11), 'h', 'ts') + txt(polar(F0, 16, a - 90), 'f', 'ts');
@@ -732,8 +732,8 @@ function parQ() {
   const F = parFigure(a, d), A1 = F.A[0], A2 = F.A[4];
   return {
     sig: `${a},${d}`, type: 'choice', text: 'Sind g und h parallel?', opts: ['Ja, parallel', 'Nein, nicht parallel'], right: d ? 1 : 0, off: [],
-    explain: d ? `α = ${A1.val}° und α₁ = ${A2.val}°. Die Stufenwinkel sind verschieden, also sind g und h nicht parallel.` : `α = α₁ = ${A1.val}°. Die Stufenwinkel sind gleich, also sind g und h parallel.`,
-    draw() { A1.lab = `α = ${A1.val}°`; A2.lab = `α₁ = ${A2.val}°`; return sector(F.V[0], A1.a1, A1.a2, F.r, 'wd c1') + sector(F.V[1], A2.a1, A2.a2, F.r, 'wd c1') + F.lines + txt(angPos(F, A1), A1.lab) + txt(angPos(F, A2), A2.lab); }
+    explain: d ? `α₁ = ${A1.val}° und α₂ = ${A2.val}°. Die Stufenwinkel sind verschieden, also sind g und h nicht parallel.` : `α₁ = α₂ = ${A1.val}°. Die Stufenwinkel sind gleich, also sind g und h parallel.`,
+    draw() { A1.lab = `α₁ = ${A1.val}°`; A2.lab = `α₂ = ${A2.val}°`; return sector(F.V[0], A1.a1, A1.a2, F.r, 'wd c1') + sector(F.V[1], A2.a1, A2.a2, F.r, 'wd c1') + F.lines + txt(angPos(F, A1), A1.lab) + txt(angPos(F, A2), A2.lab); }
   };
 }
 
